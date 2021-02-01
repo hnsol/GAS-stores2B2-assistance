@@ -1,6 +1,5 @@
 /**
  * storesのB2出力csvの編集を、少しだけ助けます
- * @customfunction
  */
 function assistInvoiceEdit() {
 
@@ -280,7 +279,15 @@ function sortByOrderDate(arrWPUB2C, shtOrder) {
   arrWPUB2C.forEach( value => {
     var idxorder = orderNum.indexOf(value[0]);
     // オーダー日の列[3]を直打ち
-    if (idxorder > 0) value.push(arrOrder[idxorder][3]);
+    // if (idxorder > 0) value.push(arrOrder[idxorder][3]);
+    if (idxorder > 0) {
+      value.push(arrOrder[idxorder][3]);  
+    } else {
+      // 何かの事情でオーダー情報からオーダー日を拾えなかった場合
+      // ダミー値を入れておく（nullだとソートができないため）
+      value.push('2001-01-01 01:00:00');
+      // console.log(value[0], idxorder);
+    }
   })
 
   // 配列をsc列で降順でソート（sc: Sort Column）
