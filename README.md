@@ -12,6 +12,8 @@ assist editing Invoice data: from stores to yamato B2 Cloud
 
 などなど。全部は対応していないが、作業ミスを防ぐため、クリティカルなものから自動化した。
 
+<img src="https://github.com/hnsol/GAS-stores2B2-assistance/blob/main/images/SS_configsheet.jpg" width="320px">
+
 
 ### how it works
 
