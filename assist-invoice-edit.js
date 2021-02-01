@@ -62,15 +62,17 @@ function assistInvoiceEdit() {
 function initConfig(ss, confg) {
   var arrConfg = ss.getSheetByName('設定シート').getDataRange().getValues();
   
-  confg.shtOrderName   = arrConfg[1][2]; // like '20210111_order'
-  confg.shtYamatName   = arrConfg[2][2]; // like '20210111_yamato'
-  confg.shtOrderClName = arrConfg[3][2]; // like '20210111_order_calc'
-  confg.shtYamatCpName = arrConfg[4][2]; // like '20210111_yamato_cp'
-  confg.samaume        = arrConfg[5][2]; // like 'true,'様',17'
-  confg.wareume        = arrConfg[6][2]; // like 'true,'ワレモノ注意',30'
-  confg.tentume        = arrConfg[7][2]; // like 'true,'天地無用',31'
-  confg.seikume        = arrConfg[8][2]; // like 'true,'09099999999',39'
-  confg.untiume        = arrConfg[9][2]; // like 'true,'true,'01',41'
+  confg.shtOrderName   = arrConfg[1][2];  // like '20210111_order'
+  confg.shtYamatName   = arrConfg[2][2];  // like '20210111_yamato'
+  // confg.shtOrderClName = arrConfg[3][2]; // like '20210111_order_calc'
+  confg.shtYamatCpName = arrConfg[4][2];  // like '20210111_yamato_cp'
+  confg.samaume        = arrConfg[5][2];  // like 'true,'様',17'
+  confg.bancume        = arrConfg[6][2];  // like 'true,'京都府...町99-99',22'
+  confg.kanaume        = arrConfg[7][2];  // like 'true,'ﾄﾅﾘﾉﾄﾄﾛ',23'
+  confg.wareume        = arrConfg[8][2];  // like 'true,'ワレモノ注意',30'
+  confg.tentume        = arrConfg[9][2];  // like 'true,'天地無用',31'
+  confg.seikume        = arrConfg[10][2]; // like 'true,'09099999999',39'
+  confg.untiume        = arrConfg[11][2]; // like 'true,'true,'01',41'
 
 }
 
@@ -312,6 +314,8 @@ function sortByOrderDate(arrWPUB2C, shtOrder) {
  */
 function xxxUme(arrWPUB2C, confg) {
   fillConstValue(arrWPUB2C, confg.samaume); // 様埋め
+  fillConstValue(arrWPUB2C, confg.bancume); // 住所番地埋め
+  fillConstValue(arrWPUB2C, confg.kanaume); // カナ埋め
   fillConstValue(arrWPUB2C, confg.wareume); // ワレモノ注意埋め
   fillConstValue(arrWPUB2C, confg.tentume); // 天地無用埋め
   fillConstValue(arrWPUB2C, confg.seikume); // 請求先顧客コード埋め
