@@ -4,6 +4,11 @@
  */
 function assistInvoiceEdit() {
 
+  // 開始確認（OKボタン押下以外は処理を中断）
+  var ui = SpreadsheetApp.getUi();
+  var response = ui.alert('B2送り状データ作成支援', '処理を開始します。よろしいですか？', ui.ButtonSet.OK_CANCEL);
+  if (response !== ui.Button.OK) return;
+
   // シート全体を取得
   var ss = SpreadsheetApp.getActiveSpreadsheet();
 
@@ -45,6 +50,8 @@ function assistInvoiceEdit() {
     .setNumberFormat('@')
     .setValues(arrWPUB2C);
 
+  // 終了メッセージ
+  var response = ui.alert('完了しました！', 'シート作成が完了しました。ご確認ください。', ui.ButtonSet.OK);
 }
 
 /**
@@ -176,11 +183,11 @@ function mapOrderToB2(arrOrder) {
   var io_wpayment = 2,  ib_wpayment = 97; // 支払い方法
   
   // 固定値
-  var ib_sendphon = 19,  cb_sendphon = '090791488750'; // ご依頼主電話番号
-  var ib_sendyubn = 21,  cb_sendyubn = '6038022';      // ご依頼主郵便番号
-  var ib_sendaddr = 22,  cb_sendaddr = '京都府京都市北区上賀茂東後藤町';    // ご依頼主住所
-  var ib_sendname = 24,  cb_sendname = '御菓子丸';      // ご依頼主名
-  var ib_clntcode = 39,  cb_clntcode = '090791488750'; // 請求先顧客コード
+  var ib_sendphon = 19,  cb_sendphon = '09xxxxxxxxxx'; // ご依頼主電話番号
+  var ib_sendyubn = 21,  cb_sendyubn = 'xxxxxxx';      // ご依頼主郵便番号
+  var ib_sendaddr = 22,  cb_sendaddr = 'xxxxxxxxx';    // ご依頼主住所
+  var ib_sendname = 24,  cb_sendname = 'xxxxxxx';      // ご依頼主名
+  var ib_clntcode = 39,  cb_clntcode = '099999999999'; // 請求先顧客コード
   var ib_chargnum = 41,  cb_chargnum = '01';           // 運賃管理番号
   var ib_itemstat = 98,  cb_itemstat = '入金待ち';      // ステータス
   
@@ -358,3 +365,5 @@ function copySheet(ss, origSheetName, newSheetName) {
   var newSht  = origSht.copyTo(ss);
   newSht.setName(newSheetName);
 }
+
+
