@@ -1,12 +1,49 @@
 /**
+ * 構造概要
+ *  buttonGenerateCheckSheet()
+ *    assistInvoiceEdit()
+ *      initConfig
+ *      clipWPLine
+ *        clipLine
+ *        groupConcat
+ *      mapOrderToB2
+ *      concatTwoDimensionalArray
+ *      sortByOrderDate
+ *      xxxUme
+ *      num2str
+ *      copySheet
+ * 
+ *  generateOrderChecker()
+ *    initConfig
+ *    sht2arr
+ *    deleteOverlap
+ *    clipRowsforCheck
+ *    deleteOverlapOrderNum
+ *    num2str
+ * 
+ */
+
+/**
+ * 「チェックシート生成」ボタンを押したときに反応を返します
+ */
+function buttonGenerateCheckSheet() {
+  // 開始確認（OKボタン以外は処理を中断）
+  var ui = SpreadsheetApp.getUi();
+  var response = ui.alert('シート作成の開始', 'Excelコピペ用シートと、チェック用シートの作成を開始します。よろしいですか？', ui.ButtonSet.OK_CANCEL);
+  if (response !== ui.Button.OK) return;
+
+  assistInvoiceEdit();    // 入金待ちデータ取り込み & 編集支援
+  generateOrderChecker(); // オーダー情報からチェックシートを作成
+
+  // 終了メッセージ
+  var response = ui.alert('完了しました！', 'シート作成が完了しました。ご確認ください。', ui.ButtonSet.OK);
+}
+
+
+/**
  * storesのB2出力csvの編集を、少しだけ助けます
  */
 function assistInvoiceEdit() {
-
-  // 開始確認（OKボタン押下以外は処理を中断）
-  var ui = SpreadsheetApp.getUi();
-  var response = ui.alert('B2送り状データ作成支援', '処理を開始します。よろしいですか？', ui.ButtonSet.OK_CANCEL);
-  if (response !== ui.Button.OK) return;
 
   // シート全体を取得
   var ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -15,8 +52,9 @@ function assistInvoiceEdit() {
   var confg = {};
   initConfig(ss, confg);
 
-  // オーダー情報シートをオブジェクト化
+  // オーダー情報シート、ヤマトcsvシートをオブジェクト化
   var shtOrder = ss.getSheetByName(confg.shtOrderName);
+  var shtYamat = ss.getSheetByName(confg.shtYamatName);
 
   // 入金待ちの行を取得
   var arrWPU = clipWPLine(shtOrder);
@@ -25,8 +63,7 @@ function assistInvoiceEdit() {
   var arrWPUB2 = mapOrderToB2(arrWPU);
 
   // yamato.csvデータと、入金待ちの配列を結合
-  var shtYamat = ss.getSheetByName(confg.shtYamatName);
-  var arrYamat = shtYamat.getDataRange().getValues();
+  var arrYamat = sht2arr(shtYamat);
   var arrWPUB2C = concatTwoDimensionalArray(arrYamat, arrWPUB2, 0);
 
   // 結合したデータをオーダー日でソート
@@ -49,8 +86,6 @@ function assistInvoiceEdit() {
     .setNumberFormat('@')
     .setValues(arrWPUB2C);
 
-  // 終了メッセージ
-  var response = ui.alert('完了しました！', 'シート作成が完了しました。ご確認ください。', ui.ButtonSet.OK);
 }
 
 /**
@@ -62,17 +97,21 @@ function assistInvoiceEdit() {
 function initConfig(ss, confg) {
   var arrConfg = ss.getSheetByName('設定シート').getDataRange().getValues();
   
+  // TODO:ここは、シートセルからオブジェクト化したい！
   confg.shtOrderName   = arrConfg[1][2];  // like '20210111_order'
   confg.shtYamatName   = arrConfg[2][2];  // like '20210111_yamato'
-  // confg.shtOrderClName = arrConfg[3][2]; // like '20210111_order_calc'
-  confg.shtYamatCpName = arrConfg[4][2];  // like '20210111_yamato_cp'
-  confg.samaume        = arrConfg[5][2];  // like 'true,'様',17'
-  confg.bancume        = arrConfg[6][2];  // like 'true,'京都府...町99-99',22'
-  confg.kanaume        = arrConfg[7][2];  // like 'true,'ﾄﾅﾘﾉﾄﾄﾛ',23'
-  confg.wareume        = arrConfg[8][2];  // like 'true,'ワレモノ注意',30'
-  confg.tentume        = arrConfg[9][2];  // like 'true,'天地無用',31'
-  confg.seikume        = arrConfg[10][2]; // like 'true,'09099999999',39'
-  confg.untiume        = arrConfg[11][2]; // like 'true,'true,'01',41'
+  confg.shtYamatCpName = arrConfg[3][2];  // like '20210111_yamato_cp'
+  confg.shtOrderCkName = arrConfg[4][2];  // like '20210111_order_ck'
+  confg.samaume = arrConfg[5][2].split(",");  // like 'true,'様',17'
+  confg.bancume = arrConfg[6][2].split(",");  // like 'true,'京都府...町99-99',22'
+  confg.kanaume = arrConfg[7][2].split(",");  // like 'true,'ﾄﾅﾘﾉﾄﾄﾛ',23'
+  confg.wareume = arrConfg[8][2].split(",");  // like 'true,'ワレモノ注意',30'
+  confg.tentume = arrConfg[9][2].split(",");  // like 'true,'天地無用',31'
+  confg.seikume = arrConfg[10][2].split(","); // like 'true,'09099999999',39'
+  confg.untiume = arrConfg[11][2].split(","); // like 'true,'true,'01',41'
+  confg.odckolf = arrConfg[12][2].split(","); // like '33,34,35,36,37,38'
+  confg.odckolt = arrConfg[13][2].split(","); // like '39,40,41,42,43,44'
+  confg.odckrow = arrConfg[14][2].split(","); // like '0,8,12,13,33,34,35,36,37,38,46,47,39,40,41,42,43,44'
 
 }
 
@@ -80,6 +119,7 @@ function initConfig(ss, confg) {
  * 入金待ちの行を抽出します
  * @param {string} shtOrder オーダー情報シートの名前
  * @return {Array} arrWPU   取得データの2次元配列 
+ * TODO: arrは上位で取っておいて、arrを受け取って処理するように変えたほうがいい
  */
 function clipWPLine(shtOrder) {
   var arrOrder = shtOrder.getDataRange().getValues();
@@ -325,14 +365,13 @@ function xxxUme(arrWPUB2C, confg) {
 /**
  * 同じデータで指定列を埋めます
  * @param {Array}  arr  操作対象の2次元配列
- * @param {string} str  設定値文字列 like 'false,様,17'
+ * @param {Array}  prm  設定値配列 like [ 'false', '様', '17' ]
  * @return {Array} arr
  */ 
-function fillConstValue(arr, str) {
-  // strを分割して変数に格納
-  var prm = str.split(',');
+function fillConstValue(arr, prm) {
   var isGo = (prm[0] == 'true') ? true : false; // ON-OFFを判定
-  var txt = prm[1], col = prm[2];
+  var txt = prm[1];
+  var col = prm[2];
 
   var header = arr.shift();
 
@@ -377,4 +416,131 @@ function copySheet(ss, origSheetName, newSheetName) {
   newSht.setName(newSheetName);
 }
 
+/**
+ * storesのB2出力について、オーダー情報からチェック用シートを作成します
+ */
+function generateOrderChecker() {
+
+  // シート全体を取得
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+
+  // '設定シート'から設定値を取得;
+  var confg = {};
+  initConfig(ss, confg);
+
+  // オーダー情報シートをオブジェクト化
+  var shtOrder = ss.getSheetByName(confg.shtOrderName);
+
+  // シートから配列に読み込み
+  var arrOD = sht2arr(shtOrder);
+
+  // 重複列を削除
+  deleteOverlap(arrOD, confg.odckolf, confg.odckolt);
+
+  // 必要列に集約
+  var arrODC = clipRowsforCheck(arrOD, confg.odckrow);
+
+  // オーダー番号をuniqueにする HACK: 0は直打ち
+  deleteOverlapOrderNum(arrODC, 0);
+
+  // 数字だけの項目には"'"をつける
+  num2str(arrODC);
+
+  // チェックシートをyamato.csvからコピー
+  copySheet(ss, confg.shtOrderName, confg.shtOrderCkName);
+  var shtOrderCk = ss.getSheetByName(confg.shtOrderCkName);
+
+  // シートをクリアして、配列を書き込む（すべて文字列とする）
+  shtOrderCk.clearContents();
+  shtOrderCk
+    .getRange(1, 1, arrODC.length, arrODC[0].length)
+    .setNumberFormat('@')
+    .setValues(arrODC);
+
+}
+
+
+/**
+ * シートからデータを取得します
+ * @param {Object} sht  操作対象シート
+ * @return {Array} arr  シートから取得した値（2次元配列）
+ */
+function sht2arr(sht) {
+  // シートから値を配列に取得
+  var arr = sht.getDataRange().getValues();
+  return arr;
+}
+
+/**
+ * 2次元配列の、指定列F,Tでの重複があればT列を削除します
+ * @param {Array}  arr   操作対象の2次元配列
+ * @param {string} idxfm 重複チェックの指定列
+ * @param {string} idxto 重複チェックの指定列、この列を削除
+ * @return {Array} arr   書き換え後の2次元配列
+ */
+function deleteOverlap(arr, idxfm, idxto) {
+
+  arr.forEach( line => {
+    idxfm.forEach( (val, idx) => {
+      if (line[val] == line[idxto[idx]]) line[idxto[idx]] = "";
+    })
+  })
+
+  return arr;
+}
+
+/**
+ * チェックシートに必要な行を抽出します
+ * @param {Array} array     操作対象の2次元配列
+ * @param {string} rowsClip 抽出する列 like [ '0', '8', '12', '13', '25' ]
+ * @return {Array}          抽出後の2次元配列
+ */
+function clipRowsforCheck(array, rowsClip) {
+  console.log(rowsClip);
+  // 行列入れ替え
+  const transpose = a => a[0].map((_, c) => a.map(r => r[c]));
+  var arrayT = transpose(array);
+
+  // 抽出
+  var arrayCT = [];
+  rowsClip.forEach( val => arrayCT.push(arrayT[val]) );
+
+  // 行列を入れ替えてリターン
+  return transpose(arrayCT);
+}
+
+/**
+ * 指定列の重複値を削除します
+ * @param {Array} array   操作対象の2次元配列
+ * @param {string} row    抽出する列 like 0
+ * @return {Array} array  抽出後の2次元配列
+ */
+function deleteOverlapOrderNum(array, row) {
+
+  // 行列を入れ替えた配列を用意
+  // TODO:関数化しようね……
+  const transpose = a => a[0].map((_, c) => a.map(r => r[c]));
+  var arrayT = transpose(array);
+
+  // 指定列の値が、初出で「ない」ならば、その値を''に置き換える
+  // NOTE: arrayT[row][idx]ではなくarray[idx][row]を書き換えている
+  arrayT[row].forEach( (val, idx) => {
+    if (idx !== arrayT[row].indexOf(val)) array[idx][row] = '';
+  });
+
+  return array;
+}
+
+
+// /**
+//  * 2次元配列の行と列を入れ替えます
+//  */
+// function transpose(array) {
+//   // const transpose = a => a[0].map((_, c) => a.map(r => r[c]));
+//   console.log(array[0]);
+//   array[0].map((_, c) => array.map(r => r[c]));
+//   console.log(array[0]);
+  
+//   return array;
+// }  
 
