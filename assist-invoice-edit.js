@@ -1,19 +1,30 @@
 /**
- * 「チェックシート生成」ボタンを押したときに反応を返します
+ * 開始用のボタンを押したときに反応を返します
  */
-function buttonGenerateCheckSheet() {
+function buttonStart() {
   // 開始確認（OKボタン以外は処理を中断）
   var ui = SpreadsheetApp.getUi();
-  var response = ui.alert('シート作成の開始', 'Excelコピペ用シートと、チェック用シートの作成を開始します。よろしいですか？', ui.ButtonSet.OK_CANCEL);
+  var response = ui.alert(
+    'シート作成の開始',
+    'Excelコピペ用シートと、チェック用シートの作成を開始します。よろしいですか？',
+    ui.ButtonSet.OK_CANCEL
+    );
   if (response !== ui.Button.OK) return;
 
-  // assistInvoiceEdit();    // 入金待ちデータ取り込み & 編集支援
-  // generateOrderChecker(); // オーダー情報からチェックシートを作成
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const shtStart = ss.getActiveSheet();
+
   generateInvoiceSht(); // 入金待ちデータ取り込み & 編集支援
   generateOrderCkSht(); // オーダー情報からチェックシートを作成
 
+  ss.setActiveSheet(shtStart); // 開始時のシートにフォーカスを戻す
+
   // 終了メッセージ
-  var response = ui.alert('完了しました！', 'シート作成が完了しました。ご確認ください。', ui.ButtonSet.OK);
+  var response = ui.alert(
+    '完了しました！',
+    'シート作成が完了しました。ご確認ください。',
+    ui.ButtonSet.OK
+    );
 }
 
 
@@ -22,7 +33,7 @@ function buttonGenerateCheckSheet() {
  */
 function generateInvoiceSht() {
 
-  // '設定シート'から設定値を取得;
+  // 'config'から設定値を取得;
   var config = {};
   // NOTE: Objectなのにconfig = と書かないかん理由がまだわかってない
   config = initConfig('config', config);
@@ -38,7 +49,8 @@ function generateInvoiceSht() {
   var arrWPUB2 = mapOrderToB2(arrWPU);
 
   // yamato.csvデータと、入金待ちの配列を結合
-  var arrWPUB2C = concatTwoDimensionalArray(arrYamat, arrWPUB2, 0);
+  // var arrWPUB2C = concatTwoDimensionalArray(arrYamat, arrWPUB2, 0);
+  var arrWPUB2C = concat2DArray(arrYamat, arrWPUB2, 0);
 
   // 結合済み出力前データの整形
   formatYamatB2(arrWPUB2C, config);
@@ -46,6 +58,29 @@ function generateInvoiceSht() {
   // 配列を出力シートに書き出す
   outputArray2Sht(arrWPUB2C, config.outShtYamatCp);
 }
+
+
+/**
+ * storesのB2出力について、オーダー情報からチェック用シートを作成します
+ */
+function generateOrderCkSht() {
+
+  // 'config'から設定値を取得;
+  var config = {};
+  // NOTE: Objectなのにconfig = と書かないかん理由がまだわかってない
+  config = initConfig('config', config);
+
+  // シートから配列を取り出す
+  var arrOD = sht2arr(config.inShtOrder);
+
+  // 配列をチェックシート用に加工
+  var arrODC = formatOrder4Check(arrOD, config);
+
+  // 配列を出力シートに書き出す
+  outputArray2Sht(arrODC, config.outShtOrderCk);
+}
+
+
 
 /**
  * 設定値を、設定シートから取り込みます
@@ -88,7 +123,19 @@ function convertSht2Obj(sheet) {
 }
 
 /**
- * 入金待ちの行を抽出します　// 改訂中
+ * シートからデータを取得します
+ * @param {Object} sht  操作対象シート　// 変更中
+ * @return {Array} arr  シートから取得した値（2次元配列）
+ */
+function sht2arr(shtName) {
+  // シートから値を配列に取得
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  var arr = ss.getSheetByName(shtName).getDataRange().getValues();
+  return arr;
+}
+
+/**
+ * 入金待ちの行を抽出します
  * @param {string} shtOrder オーダー情報シートの名前
  * @return {Array} arrWPU   取得データの2次元配列 
  * TODO: arrは上位で取っておいて、arrを受け取って処理するように変えたほうがいい
@@ -175,7 +222,7 @@ function groupConcat(arr, key, col, dlm){
 }
 
 /**
- * オーダー形式のデータをB2形式へマッピングする
+ * オーダー形式のデータをB2形式へマッピングします
  * @param  {Array} arrOrder 操作対象の2次元配列   
  * @return {Array} arrB2    連結後の2次元配列 
  * TODO:設定に外出しするのがいいのかもしれないが、動いているので触っていない
@@ -251,7 +298,7 @@ function mapOrderToB2(arrOrder) {
  * NOTE:ここまで一般化しなくていい気がするけど、動いているので触っていない
  * https://qiita.com/hikobotch/items/bda1e23879dd842cee35
  */
-function concatTwoDimensionalArray(arr1, arr2, axis) {
+function concat2DArray(arr1, arr2, axis) {
   if(axis != 1) axis = 0;
   var arr3 = [];
   if (axis == 0) {  // 縦方向の結合
@@ -423,50 +470,16 @@ function smartInsSheet(shtName) {
 }
 
 
-// /**
-//  * シートをコピーします
-//  * @param {string} origSheetName  コピー元のシート名称 
-//  * @param {string} newSheetName   生成するシート名称
-//  */
-// function copySheet(ss, origSheetName, newSheetName) {
-
-//   var origSht = ss.getSheetByName(origSheetName);
-
-//   // コピー先のシートがすでに存在する場合は、削除する
-//   var previousSht = ss.getSheetByName(newSheetName);
-//   if (previousSht !== null) ss.deleteSheet(previousSht);
-
-//   var newSht  = origSht.copyTo(ss);
-//   newSht.setName(newSheetName);
-// }
-
-
-
-
-
 /**
- * storesのB2出力について、オーダー情報からチェック用シートを作成します
+ * オーダー情報を、チェック用にフォーマットします
  */
-function generateOrderCkSht() {
-
-  // シート全体を取得
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-
-  // '設定シート'から設定値を取得;
-  var confg = {};
-  initConfig(ss, confg);
-
-  // オーダー情報シートをオブジェクト化
-  var shtOrder = ss.getSheetByName(confg.shtOrderName);
-
-  // シートから配列に読み込み
-  var arrOD = sht2arr(shtOrder);
+function formatOrder4Check(arrOD, config) {
 
   // 重複列を削除
-  deleteOverlap(arrOD, confg.odckolf, confg.odckolt);
+  deleteOverlap(arrOD, config.odckolf, config.odckolt);
 
   // 必要列に集約
-  var arrODC = clipRowsforCheck(arrOD, confg.odckrow);
+  var arrODC = clipRowsforCheck(arrOD, config.odckrow);
 
   // オーダー番号をuniqueにする HACK: 0は直打ち
   deleteOverlapOrderNum(arrODC, 0);
@@ -474,31 +487,7 @@ function generateOrderCkSht() {
   // 数字だけの項目には"'"をつける
   num2str(arrODC);
 
-  // チェックシートをyamato.csvからコピー
-  copySheet(ss, confg.shtOrderName, confg.shtOrderCkName);
-  var shtOrderCk = ss.getSheetByName(confg.shtOrderCkName);
-
-  // シートをクリアして、配列を書き込む（すべて文字列とする）
-  shtOrderCk.clearContents();
-  shtOrderCk
-    .getRange(1, 1, arrODC.length, arrODC[0].length)
-    .setNumberFormat('@')
-    .setValues(arrODC);
-
-}
-
-
-/**
- * シートからデータを取得します
- * @param {Object} sht  操作対象シート　// 変更中
- * @return {Array} arr  シートから取得した値（2次元配列）
- */
-function sht2arr(shtName) {
-  // シートから値を配列に取得
-  // var arr = sht.getDataRange().getValues();
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  var arr = ss.getSheetByName(shtName).getDataRange().getValues();
-  return arr;
+  return arrODC;
 }
 
 /**
@@ -526,7 +515,7 @@ function deleteOverlap(arr, idxfm, idxto) {
  * @return {Array}          抽出後の2次元配列
  */
 function clipRowsforCheck(array, rowsClip) {
-  console.log(rowsClip);
+  // console.log(rowsClip);
   // 行列入れ替え
   const transpose = a => a[0].map((_, c) => a.map(r => r[c]));
   var arrayT = transpose(array);
@@ -575,30 +564,42 @@ function deleteOverlapOrderNum(array, row) {
 // }  
 
 
-
 /**
- * 構造概要
- *  buttonGenerateCheckSheet()
- *    generateInvoiceSht()
- *      initConfig
- *      clipWPLine
- *        clipLine
- *        groupConcat
- *      mapOrderToB2
- *      concatTwoDimensionalArray
- *      sortByOrderDate
- *      xxxUme
- *      num2str
- *      copySheet
  * 
- *  generateOrderCkSht()
- *    initConfig
- *    sht2arr
- *    deleteOverlap
- *    clipRowsforCheck
- *    deleteOverlapOrderNum
- *    num2str
+ * | #01           | #02                  | #03               |
+ * | ------------- | -------------------- | ----------------- |
+ * | buttonStart() | generateInvoiceSht() | initConfig        |
+ * |               |                      | sht2arr           |
+ * |               |                      | clipWPLine        |
+ * |               |                      | mapOrderToB2      |
+ * |               |                      | concat2DArray     |
+ * |               |                      | formatYamatB2     |
+ * |               |                      | outputArray2Sht   |
+ * |               | generateOrderCkSht() | initConfig        |
+ * |               |                      | sht2arr           |
+ * |               |                      | formatOrder4Check |
+ * |               |                      | outputArray2Sht   |
+ * |               |                      |                   |
+ * 
+ * | #02                  | #03               | #04                   | #05            |
+ * | -------------------- | ----------------- | --------------------- | -------------- |
+ * | generateInvoiceSht() | initConfig        | convertSht2Obj        |                |
+ * |                      | sht2arr           |                       |                |
+ * |                      | clipWPLine        | clipLine              |                |
+ * |                      |                   | groupConcat           |                |
+ * |                      | mapOrderToB2      |                       |                |
+ * |                      | concat2DArray     |                       |                |
+ * |                      | formatYamatB2     | sortByOrderDate       |                |
+ * |                      |                   | xxxUme                | fillConstValue |
+ * |                      |                   | num2str               |                |
+ * |                      | outputArray2Sht   | smartInsSheet         |                |
+ * |                      |                   |                       |                |
+ * | generateOrderCkSht() | initConfig        | convertSht2Obj        |                |
+ * |                      | sht2arr           |                       |                |
+ * |                      | formatOrder4Check | deleteOverlap         |                |
+ * |                      |                   | clipRowsforCheck      |                |
+ * |                      |                   | deleteOverlapOrderNum |                |
+ * |                      |                   | num2str               |                |
+ * |                      | outputArray2Sht   | smartInsSheet         |                |
  * 
  */
-
-
