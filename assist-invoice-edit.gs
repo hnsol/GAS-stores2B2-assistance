@@ -145,6 +145,8 @@ function clipWPLine(arrOrder) {
   // ①入金待ちのレコードを抽出
   // HACK:直打ち - 列1が値'入金待ち'であるものを抽出
   var arrWP = clipLine(arrOrder, 1, '入金待ち');
+  // 入金待ちの行が全く存在しない場合は、arrWP（空の配列）を返す
+  if ( arrWP.length < 1 ) return arrWP;
 
   // ②品名欄を連結し、重複レコードを削除
   // HACK:直打ち - 連結キーはオーダー番号で、0列　連結列は品名で、8列　デリミタは','
