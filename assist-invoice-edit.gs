@@ -43,7 +43,7 @@ function generateInvoiceSht() {
   var arrYamat = sht2arr(config.inShtYamat);
 
   // 入金待ちの行を抽出
-  var arrWPU = clipWPLine(arrOrder);
+  var arrWPU = clipWPLine(arrOrder, config);
 
   // 入金待ちの配列を、オーダー情報形式からヤマトB2形式に変換
   var arrWPUB2 = mapOrderToB2(arrWPU);
@@ -133,15 +133,12 @@ function sht2arr(shtName) {
 
   // シートを取得。取得でエラーが発生した場合、アラートを出してシート名を表示し、プログラム終了
   try {
-    // const sht = ss.getSheetByName(shtName);
     var arr = ss.getSheetByName(shtName).getDataRange().getValues();
   } catch(e) {
      const ui = SpreadsheetApp.getUi();
      const rs = ui.alert('処理を停止します', '「シートの名前」が間違っているようです: ' + shtName, ui.ButtonSet.OK);
      throw new Error('指定された名前のシートが見つかりませんでした');
   }
-
-  // var arr = sht.getDataRange().getValues();
     
   return arr;
 }
@@ -153,17 +150,19 @@ function sht2arr(shtName) {
  * @return {Array} arrWPU   取得データの2次元配列 
  * TODO: arrは上位で取っておいて、arrを受け取って処理するように変えたほうがいい
  */
-function clipWPLine(arrOrder) {
+function clipWPLine(arrOrder, config) {
 
   // ①入金待ちのレコードを抽出
-  // HACK:直打ち - 列1が値'入金待ち'であるものを抽出
-  var arrWP = clipLine(arrOrder, 1, '入金待ち');
+  // like clipLine(arrOrder, 1, '入金待ち');
+  var arrWP = clipLine(arrOrder, config.cliprow, config.clipstr);
+
   // 入金待ちの行が全く存在しない場合は、arrWP（空の配列）を返す
+  // エラー処理のしかたを再度考えたが、こうするのが最も目的に沿うとおもう
   if ( arrWP.length < 1 ) return arrWP;
 
   // ②品名欄を連結し、重複レコードを削除
-  // HACK:直打ち - 連結キーはオーダー番号で、0列　連結列は品名で、8列　デリミタは','
-  var arrWPU = groupConcat(arrWP, 0, 8, ', ');
+  // like groupConcat(arrWP, 0, 8, ', ');
+  var arrWPU = groupConcat(arrWP, config.conckey, config.concrow, config.concdelm);
 
   return arrWPU; 
 }
@@ -244,6 +243,9 @@ function groupConcat(arr, key, col, dlm){
  */
 function mapOrderToB2(arrOrder) {
   var arrB2 = [];
+
+  // 今は下記行がなくても想定通り動いているが、明示的に処理の意図を記述した
+  if (arrOrder.length < 1) return arrB2;
 
   // インデックス設定：1to1マッピング　※列数から1マイナスのこと
   var io_ordernum = 0,  ib_ordernum = 0;  // オーダー番号
