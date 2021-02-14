@@ -135,9 +135,9 @@ function sht2arr(shtName) {
   try {
     var arr = ss.getSheetByName(shtName).getDataRange().getValues();
   } catch(e) {
-     const ui = SpreadsheetApp.getUi();
-     const rs = ui.alert('処理を停止します', '「シートの名前」が間違っているようです: ' + shtName, ui.ButtonSet.OK);
-     throw new Error('指定された名前のシートが見つかりませんでした');
+    const ui = SpreadsheetApp.getUi();
+    const rs = ui.alert('処理を停止します', '「シートの名前」が間違っているようです: ' + shtName, ui.ButtonSet.OK);
+    throw e;
   }
     
   return arr;
