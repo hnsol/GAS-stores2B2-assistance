@@ -6,7 +6,7 @@ function buttonStart() {
   var ui = SpreadsheetApp.getUi();
   var response = ui.alert(
     'シート作成の開始',
-    'Excelコピペ用シートと、チェック用シートの作成を開始します。よろしいですか？',
+    'Excelコピペ用シートと、チェック用シートの作成を開始します。\nよろしいですか？',
     ui.ButtonSet.OK_CANCEL
     );
   if (response !== ui.Button.OK) return;
@@ -130,9 +130,22 @@ function convertSht2Obj(sheet) {
 function sht2arr(shtName) {
   // シートから値を配列に取得
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  var arr = ss.getSheetByName(shtName).getDataRange().getValues();
+
+  // シートを取得。取得でエラーが発生した場合、アラートを出してシート名を表示し、プログラム終了
+  try {
+    // const sht = ss.getSheetByName(shtName);
+    var arr = ss.getSheetByName(shtName).getDataRange().getValues();
+  } catch(e) {
+     const ui = SpreadsheetApp.getUi();
+     const rs = ui.alert('処理を停止します', '「シートの名前」が間違っているようです: ' + shtName, ui.ButtonSet.OK);
+     throw new Error('指定された名前のシートが見つかりませんでした');
+  }
+
+  // var arr = sht.getDataRange().getValues();
+    
   return arr;
 }
+
 
 /**
  * 入金待ちの行を抽出します
