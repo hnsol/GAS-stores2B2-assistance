@@ -39,24 +39,90 @@ function generateInvoiceSht() {
   config = initConfig('config', config);
 
   // シートから配列を取り出す
-  var arrOrder = sht2arr(config.inShtOrder);
-  var arrYamat = sht2arr(config.inShtYamat);
+  var arrOrder = sht2arr(config.inShtOrder);  // オーダー情報
+  var arrYamat = sht2arr(config.inShtYamat);  // ヤマト用出力
 
-  // 入金待ちの行を抽出
+  // オーダー情報から入金待ちの行を抽出
   var arrWPU = clipWPLine(arrOrder, config);
 
   // 入金待ちの配列を、オーダー情報形式からヤマトB2形式に変換
-  var arrWPUB2 = mapOrderToB2(arrWPU);
+  var arrWPUB2 = mapOrderToB2(arrWPU, config);
+
+  // ※追加※オーダー情報のうち、配送先と購入者が異なる場合、ヤマトB2データを修正
+  modifySenderYamato(arrYamat, arrOrder, config);
 
   // yamato.csvデータと、入金待ちの配列を結合
-  // var arrWPUB2C = concatTwoDimensionalArray(arrYamat, arrWPUB2, 0);
   var arrWPUB2C = concat2DArray(arrYamat, arrWPUB2, 0);
 
-  // 結合済み出力前データの整形
+  // ※追加※結合済み出力前データの整形
   formatYamatB2(arrWPUB2C, config);
 
   // 配列を出力シートに書き出す
   outputArray2Sht(arrWPUB2C, config.outShtYamatCp);
+}
+
+/**
+ * オーダー情報上で、配送先と購入者が異なる場合、ヤマトB2データを修正する
+ */
+function modifySenderYamato(arrYamat, arrOrder, config) {
+  const idxto = config.odsndto;
+  const idxfm = config.odsndfr;
+
+  const transpose = a => a[0].map((_, c) => a.map(r => r[c]));
+  var   setPickOrders = new Set();  // ピップアップ対象のオーダー番号
+  var   arrPick = [];               // 対象情報ピックアップ用
+  var   arrModYamato  = [];         // ヤマト伝票書き換え用の情報（２次元）
+
+  // ヘッダは取り置いておく（オーダー番号以外の値が取得されてしまわないように）
+  const arrOrderHeader = arrOrder.shift();
+
+  // オーダー情報で、*(配送先) != *(購入者)　であるような行の、オーダー番号を取得
+  // NOTE:1つでも異なれば、対象行とする
+  // NOTE:おなじオーダー番号で複数行があり得るが、オーダー番号は1つだけ取る
+  arrOrder.forEach( (line, lineNo) => {
+    // arrOrderの各行について、購入者情報 != 配送先情報 のとき、
+    // その行番号（lineNo）を記録する（重複する場合は記録しない）
+    idxfm.forEach( (fromrow, index ) => {
+      if ( line[fromrow] != line[idxto[index]]) {
+      setPickOrders.add(lineNo);
+      }
+    })
+  })
+
+  // 該当行を取得し配列化（オーダー番号ごとに1行だけ取得している） 
+  setPickOrders.forEach( lineNo => {
+    arrPick.push(arrOrder[lineNo]);
+  })
+
+  // 該当行配列から、次に使う書き換え用の配列を生成
+  // [ オーダー番号, ご依頼主電話番号, ご依頼主郵便番号, ご依頼主住所,
+  //   ご依頼主アパートマンション, ご依頼主名 ]
+  // HACK: ここは手抜きだがハードコーディング
+  // NOTE: configに書き出してもあとで余計に混乱する気が
+  arrPick.forEach( line => {
+    arrModYamato.push( [line[0], line[44], line[41], line[42]+line[43],
+    '', line[39] + ' ' + line[40]]);
+  })
+
+  // 取得したオーダー番号をキーにして、ヤマトB2の依頼主情報を書き換える
+  const arrYamatOrder = transpose(arrYamat)[0]; // オーダー番号だけ並べた1次元配列
+
+  // arrYamatのオーダー情報が一致する行を特定し、書き換え
+  arrModYamato.forEach( row => {
+    // 行の特定
+    let lineno = arrYamatOrder.indexOf(row[0]);
+    // 書き換え
+    // HACK: ここは手抜きだがハードコーディング
+    // NOTE: configに書き出してもあとで余計に混乱する気が
+    arrYamat[lineno][19] = row[1]; // ご依頼主電話番号
+    arrYamat[lineno][21] = row[2]; // ご依頼主郵便番号
+    arrYamat[lineno][22] = row[3]; // ご依頼主住所
+    arrYamat[lineno][23] = row[4]; // ご依頼主アパートマンション（いつも''）
+    arrYamat[lineno][24] = row[5]; // ご依頼主名
+  })
+
+  return arrYamat
+
 }
 
 
@@ -104,6 +170,10 @@ function initConfig(shtName, config) {
   config.odckolf = config.odckolf.split(","); // like '33,34,35,36,37,38'
   config.odckolt = config.odckolt.split(","); // like '39,40,41,42,43,44'
   config.odckrow = config.odckrow.split(","); // like '0,8,12,13,33,34,35,36,37,38,46,47,39,40,41,42,43,44'
+  config.odsndto = config.odsndto.split(","); // like '33,34,35,36,37,38'
+  config.odsndfr = config.odsndfr.split(","); // like '39,40,41,42,43,44'
+  config.umehncs = config.umehncs.split(","); // like '19,090791488750'
+  config.constst = config.constst.split(","); // like '090..,60..,京..,御..,09..,01,入金待ち,603.'
 
   return config;
 }
@@ -239,9 +309,9 @@ function groupConcat(arr, key, col, dlm){
  * オーダー形式のデータをB2形式へマッピングします
  * @param  {Array} arrOrder 操作対象の2次元配列   
  * @return {Array} arrB2    連結後の2次元配列 
- * TODO:設定に外出しするのがいいのかもしれないが、動いているので触っていない
+ * TODO:configに外出しするのが望ましい
  */
-function mapOrderToB2(arrOrder) {
+function mapOrderToB2(arrOrder, config) {
   var arrB2 = [];
 
   // 今は下記行がなくても想定通り動いているが、明示的に処理の意図を記述した
@@ -258,13 +328,13 @@ function mapOrderToB2(arrOrder) {
   var io_wpayment = 2,  ib_wpayment = 97; // 支払い方法
   
   // 固定値
-  var ib_sendphon = 19,  cb_sendphon = '090791488750'; // ご依頼主電話番号
-  var ib_sendyubn = 21,  cb_sendyubn = '6038022';      // ご依頼主郵便番号
-  var ib_sendaddr = 22,  cb_sendaddr = '京都府京都市北区上賀茂東後藤町';    // ご依頼主住所
-  var ib_sendname = 24,  cb_sendname = '御菓子丸';      // ご依頼主名
-  var ib_clntcode = 39,  cb_clntcode = '090791488750'; // 請求先顧客コード
-  var ib_chargnum = 41,  cb_chargnum = '01';           // 運賃管理番号
-  var ib_itemstat = 98,  cb_itemstat = '入金待ち';      // ステータス
+  var ib_sendphon = 19, cb_sendphon = config.constst[0]; // ご依頼主電話番号
+  var ib_sendyubn = 21, cb_sendyubn = config.constst[1]; // ご依頼主郵便番号
+  var ib_sendaddr = 22, cb_sendaddr = config.constst[2]; // ご依頼主住所
+  var ib_sendname = 24, cb_sendname = config.constst[3]; // ご依頼主名
+  var ib_clntcode = 39, cb_clntcode = config.constst[4]; // 請求先顧客コード
+  var ib_chargnum = 41, cb_chargnum = config.constst[5]; // 運賃管理番号
+  var ib_itemstat = 98, cb_itemstat = config.constst[6]; // ステータス
   
   // 結合値
   var io_ad1 = 36, io_ad2 = 37, ib_ad1 = 11, ib_ad2 = 12; // お届け先住所 マンション名
@@ -314,6 +384,7 @@ function mapOrderToB2(arrOrder) {
  * @return {Array} arr3
  * NOTE:ここまで一般化しなくていい気がするけど、動いているので触っていない
  * https://qiita.com/hikobotch/items/bda1e23879dd842cee35
+ * TODO:forループが回っているで、lengthチェックがあったほうがいいと思う
  */
 function concat2DArray(arr1, arr2, axis) {
   if(axis != 1) axis = 0;
@@ -406,12 +477,15 @@ function sortByOrderDate(arrWPUB2C, shtName) {
  */
 function xxxUme(arrWPUB2C, config) {
   fillConstValue(arrWPUB2C, config.samaume); // 様埋め
-  fillConstValue(arrWPUB2C, config.bancume); // 住所番地埋め
-  fillConstValue(arrWPUB2C, config.kanaume); // カナ埋め
   fillConstValue(arrWPUB2C, config.wareume); // ワレモノ注意埋め
   fillConstValue(arrWPUB2C, config.tentume); // 天地無用埋め
   fillConstValue(arrWPUB2C, config.seikume); // 請求先顧客コード埋め
   fillConstValue(arrWPUB2C, config.untiume); // 運賃管理番号埋め
+
+  // 単純な埋めではないケース（条件分岐があるため）
+  fillSendrValue(arrWPUB2C, config.bancume, config.umehncs);  // 住所番地埋め
+  fillSendrValue(arrWPUB2C, config.kanaume, config.umehncs);  // カナ埋め
+
 }
 
 /**
@@ -428,6 +502,29 @@ function fillConstValue(arr, prm) {
 
   // col列をtxtで埋める
   if (isGo) arr.forEach( value => value[col] = txt );
+  
+  return arr.unshift(header);
+}
+
+/**
+ * 同じデータで指定列を埋めます（依頼主が異なる場合があるので関数を分けた）
+ * @param {Array}  arr  操作対象の2次元配列
+ * @param {Array}  prm  設定値配列 like [ 'false', '様', '17' ]
+ * @return {Array} arr
+ */ 
+function fillSendrValue(arr, prm, judge) {
+  var isGo = (prm[0] == 'true') ? true : false; // ON-OFFを判定
+  var txt = prm[1], col = prm[2];
+  var judgeCol = +judge[0], judgeStr = judge[1];
+
+  var header = arr.shift();
+
+
+  // col列をtxtで埋める
+  // !! 依頼主がデフォではない場合、何もしない !!
+  if (isGo) arr.forEach( value => {
+    // if ( value[19] == '090791488750') value[col] = txt });
+    if ( value[judgeCol] == judgeStr ) value[col] = txt });
   
   return arr.unshift(header);
 }
@@ -495,7 +592,7 @@ function formatOrder4Check(arrOD, config) {
   // 重複列を削除
   deleteOverlap(arrOD, config.odckolf, config.odckolt);
 
-  // 必要列に集約
+  // 必要列に集約　// NOTE: RowsじゃなくてColumnsだ……
   var arrODC = clipRowsforCheck(arrOD, config.odckrow);
 
   // オーダー番号をuniqueにする HACK: 0は直打ち
@@ -526,7 +623,7 @@ function deleteOverlap(arr, idxfm, idxto) {
 }
 
 /**
- * チェックシートに必要な行を抽出します
+ * チェックシートに必要な行を抽出します // NOTE: RowsじゃなくてColumnsだ……
  * @param {Array} array     操作対象の2次元配列
  * @param {string} rowsClip 抽出する列 like [ '0', '8', '12', '13', '25' ]
  * @return {Array}          抽出後の2次元配列
@@ -566,6 +663,7 @@ function deleteOverlapOrderNum(array, row) {
 
   return array;
 }
+
 
 
 // /**
