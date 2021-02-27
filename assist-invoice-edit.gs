@@ -61,70 +61,6 @@ function generateInvoiceSht() {
   outputArray2Sht(arrWPUB2C, config.outShtYamatCp);
 }
 
-/**
- * オーダー情報上で、配送先と購入者が異なる場合、ヤマトB2データを修正する
- */
-function modifySenderYamato(arrYamat, arrOrder, config) {
-  const idxto = config.odsndto;
-  const idxfm = config.odsndfr;
-
-  const transpose = a => a[0].map((_, c) => a.map(r => r[c]));
-  var   setPickOrders = new Set();  // ピップアップ対象のオーダー番号
-  var   arrPick = [];               // 対象情報ピックアップ用
-  var   arrModYamato  = [];         // ヤマト伝票書き換え用の情報（２次元）
-
-  // ヘッダは取り置いておく（オーダー番号以外の値が取得されてしまわないように）
-  const arrOrderHeader = arrOrder.shift();
-
-  // オーダー情報で、*(配送先) != *(購入者)　であるような行の、オーダー番号を取得
-  // NOTE:1つでも異なれば、対象行とする
-  // NOTE:おなじオーダー番号で複数行があり得るが、オーダー番号は1つだけ取る
-  arrOrder.forEach( (line, lineNo) => {
-    // arrOrderの各行について、購入者情報 != 配送先情報 のとき、
-    // その行番号（lineNo）を記録する（重複する場合は記録しない）
-    idxfm.forEach( (fromrow, index ) => {
-      if ( line[fromrow] != line[idxto[index]]) {
-      setPickOrders.add(lineNo);
-      }
-    })
-  })
-
-  // 該当行を取得し配列化（オーダー番号ごとに1行だけ取得している） 
-  setPickOrders.forEach( lineNo => {
-    arrPick.push(arrOrder[lineNo]);
-  })
-
-  // 該当行配列から、次に使う書き換え用の配列を生成
-  // [ オーダー番号, ご依頼主電話番号, ご依頼主郵便番号, ご依頼主住所,
-  //   ご依頼主アパートマンション, ご依頼主名 ]
-  // HACK: ここは手抜きだがハードコーディング
-  // NOTE: configに書き出してもあとで余計に混乱する気が
-  arrPick.forEach( line => {
-    arrModYamato.push( [line[0], line[44], line[41], line[42]+line[43],
-    '', line[39] + ' ' + line[40]]);
-  })
-
-  // 取得したオーダー番号をキーにして、ヤマトB2の依頼主情報を書き換える
-  const arrYamatOrder = transpose(arrYamat)[0]; // オーダー番号だけ並べた1次元配列
-
-  // arrYamatのオーダー情報が一致する行を特定し、書き換え
-  arrModYamato.forEach( row => {
-    // 行の特定
-    let lineno = arrYamatOrder.indexOf(row[0]);
-    // 書き換え
-    // HACK: ここは手抜きだがハードコーディング
-    // NOTE: configに書き出してもあとで余計に混乱する気が
-    arrYamat[lineno][19] = row[1]; // ご依頼主電話番号
-    arrYamat[lineno][21] = row[2]; // ご依頼主郵便番号
-    arrYamat[lineno][22] = row[3]; // ご依頼主住所
-    arrYamat[lineno][23] = row[4]; // ご依頼主アパートマンション（いつも''）
-    arrYamat[lineno][24] = row[5]; // ご依頼主名
-  })
-
-  return arrYamat
-
-}
-
 
 /**
  * storesのB2出力について、オーダー情報からチェック用シートを作成します
@@ -373,6 +309,72 @@ function mapOrderToB2(arrOrder, config) {
   }
     
   return arrB2
+}
+
+/**
+ * オーダー情報上で、配送先と購入者が異なる場合、ヤマトB2データを修正します
+ * @param {Array} arrYamat  ヤマトB2伝票（2次元）
+ * @param {Array} arrOrder  オーダー情報配列（2次元）
+ * @param {Object} config   設定値オブジェクト
+ */
+function modifySenderYamato(arrYamat, arrOrder, config) {
+  const idxto = config.odsndto;
+  const idxfm = config.odsndfr;
+
+  const transpose = a => a[0].map((_, c) => a.map(r => r[c]));
+  var   setPickOrders = new Set();  // ピップアップ対象のオーダー番号
+  var   arrPick = [];               // 対象情報ピックアップ用
+  var   arrModYamato  = [];         // ヤマト伝票書き換え用の情報（２次元）
+
+  // ヘッダは取り置いておく（オーダー番号以外の値が取得されてしまわないように）
+  const arrOrderHeader = arrOrder.shift();
+
+  // オーダー情報で、*(配送先) != *(購入者)　であるような行の、オーダー番号を取得
+  // NOTE:1つでも異なれば、対象行とする
+  // NOTE:おなじオーダー番号で複数行があり得るが、オーダー番号は1つだけ取る
+  arrOrder.forEach( (line, lineNo) => {
+    // arrOrderの各行について、購入者情報 != 配送先情報 のとき、
+    // その行番号（lineNo）を記録する（重複する場合は記録しない）
+    idxfm.forEach( (fromrow, index ) => {
+      if ( line[fromrow] != line[idxto[index]]) {
+      setPickOrders.add(lineNo);
+      }
+    })
+  })
+
+  // 該当行を取得し配列化（オーダー番号ごとに1行だけ取得している） 
+  setPickOrders.forEach( lineNo => {
+    arrPick.push(arrOrder[lineNo]);
+  })
+
+  // 該当行配列から、次に使う書き換え用の配列を生成
+  // [ オーダー番号, ご依頼主電話番号, ご依頼主郵便番号, ご依頼主住所,
+  //   ご依頼主アパートマンション, ご依頼主名 ]
+  // HACK: ここは手抜きだがハードコーディング
+  // NOTE: configに書き出してもあとで余計に混乱する気が
+  arrPick.forEach( line => {
+    arrModYamato.push( [line[0], line[44], line[41], line[42]+line[43],
+    '', line[39] + ' ' + line[40]]);
+  })
+
+  // 取得したオーダー番号をキーにして、ヤマトB2の依頼主情報を書き換える
+  const arrYamatOrder = transpose(arrYamat)[0]; // オーダー番号だけ並べた1次元配列
+
+  // arrYamatのオーダー情報が一致する行を特定し、書き換え
+  arrModYamato.forEach( row => {
+    // 行の特定
+    let lineno = arrYamatOrder.indexOf(row[0]);
+    // 書き換え
+    // HACK: ここは手抜きだがハードコーディング
+    // NOTE: configに書き出してもあとで余計に混乱する気が
+    arrYamat[lineno][19] = row[1]; // ご依頼主電話番号
+    arrYamat[lineno][21] = row[2]; // ご依頼主郵便番号
+    arrYamat[lineno][22] = row[3]; // ご依頼主住所
+    arrYamat[lineno][23] = row[4]; // ご依頼主アパートマンション（いつも''）
+    arrYamat[lineno][24] = row[5]; // ご依頼主名
+  })
+
+  return arrYamat
 }
 
 /**
@@ -681,40 +683,43 @@ function deleteOverlapOrderNum(array, row) {
 
 /**
  * 
- * | #01           | #02                  | #03               |
- * | ------------- | -------------------- | ----------------- |
- * | buttonStart() | generateInvoiceSht() | initConfig        |
- * |               |                      | sht2arr           |
- * |               |                      | clipWPLine        |
- * |               |                      | mapOrderToB2      |
- * |               |                      | concat2DArray     |
- * |               |                      | formatYamatB2     |
- * |               |                      | outputArray2Sht   |
- * |               | generateOrderCkSht() | initConfig        |
- * |               |                      | sht2arr           |
- * |               |                      | formatOrder4Check |
- * |               |                      | outputArray2Sht   |
- * |               |                      |                   |
+ * | #01           | #02                  | #03                |
+ * | ------------- | -------------------- | ------------------ |
+ * | buttonStart() | generateInvoiceSht() | initConfig         |
+ * |               |                      | sht2arr            |
+ * |               |                      | clipWPLine         |
+ * |               |                      | mapOrderToB2       |
+ * |               |                      | modifySenderYamato | 
+ * |               |                      | concat2DArray      |
+ * |               |                      | formatYamatB2      |
+ * |               |                      | outputArray2Sht    |
+ * |               | generateOrderCkSht() | initConfig         |
+ * |               |                      | sht2arr            |
+ * |               |                      | formatOrder4Check  |
+ * |               |                      | outputArray2Sht    |
+ * |               |                      |                    |
  * 
- * | #02                  | #03               | #04                   | #05            |
- * | -------------------- | ----------------- | --------------------- | -------------- |
- * | generateInvoiceSht() | initConfig        | convertSht2Obj        |                |
- * |                      | sht2arr           |                       |                |
- * |                      | clipWPLine        | clipLine              |                |
- * |                      |                   | groupConcat           |                |
- * |                      | mapOrderToB2      |                       |                |
- * |                      | concat2DArray     |                       |                |
- * |                      | formatYamatB2     | sortByOrderDate       |                |
- * |                      |                   | xxxUme                | fillConstValue |
- * |                      |                   | num2str               |                |
- * |                      | outputArray2Sht   | smartInsSheet         |                |
- * |                      |                   |                       |                |
- * | generateOrderCkSht() | initConfig        | convertSht2Obj        |                |
- * |                      | sht2arr           |                       |                |
- * |                      | formatOrder4Check | deleteOverlap         |                |
- * |                      |                   | clipRowsforCheck      |                |
- * |                      |                   | deleteOverlapOrderNum |                |
- * |                      |                   | num2str               |                |
- * |                      | outputArray2Sht   | smartInsSheet         |                |
+ * | #02                  | #03                | #04                   | #05            |
+ * | -------------------- | ------------------ | --------------------- | -------------- |
+ * | generateInvoiceSht() | initConfig         | convertSht2Obj        |                |
+ * |                      | sht2arr            |                       |                |
+ * |                      | clipWPLine         | clipLine              |                |
+ * |                      |                    | groupConcat           |                |
+ * |                      | mapOrderToB2       |                       |                |
+ * |                      | modifySenderYamato |                       |                |
+ * |                      | concat2DArray      |                       |                |
+ * |                      | formatYamatB2      | sortByOrderDate       |                |
+ * |                      |                    | xxxUme                | fillConstValue |
+ * |                      |                    |                       | fillSendrValue |
+ * |                      |                    | num2str               |                |
+ * |                      | outputArray2Sht    | smartInsSheet         |                |
+ * |                      |                    |                       |                |
+ * | generateOrderCkSht() | initConfig         | convertSht2Obj        |                |
+ * |                      | sht2arr            |                       |                |
+ * |                      | formatOrder4Check  | deleteOverlap         |                |
+ * |                      |                    | clipRowsforCheck      |                |
+ * |                      |                    | deleteOverlapOrderNum |                |
+ * |                      |                    | num2str               |                |
+ * |                      | outputArray2Sht    | smartInsSheet         |                |
  * 
  */
