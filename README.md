@@ -61,10 +61,35 @@ STORESからは、「オーダー」と「送り状」の2つのCSVをダウン�
 
 ## GAS(Google Apps Script)で行うこと
 
-GASで行うタスクに絞って拡大すると、下図のようになる。
+GASで行うタスクに絞って拡大すると、下図の通りとなる。
 
+### ヤマト送り状作成支援
 
-<img src="https://github.com/hnsol/GAS-stores2B2-assistance/blob/main/images/SS_configsheet.png" width="320px">
+<img src="https://raw.githubusercontent.com/hnsol/GAS-stores2B2-assistance/main/images/DaaC/C4_Compornet_B2.png" width=100%>
+
+1. オーダー情報CSVのうち、`01 ステータス`が`未入金`であるレコードを抽出し、送り状CSV形式（ヤマトB2クラウドに流せる形式）に変換する
+> - レコードが複数ある場合（注文品が複数の場合）、品名を`, `で連結
+> - お届け先名は、氏と名を` `（半角スペース）で連結
+> - そのほかは、オーダー情報からのコピーもしくは固定値
+2. 抽出したものと、ダウンロードした送り状CSVを連結する
+> GASの配列上で行う
+3. 機械的に埋められる項目を埋める
+> - 配送先≠購入者の場合は、オーダー情報からデータを抽出して置き換える
+> - そのほかは、固定値を埋められるものを埋める
+
+### オーダー情報からチェックシートを作成
+
+<img src="https://raw.githubusercontent.com/hnsol/GAS-stores2B2-assistance/main/images/DaaC/C4_Component_order.png" width=100%>
+
+1. 必要列に絞り、チェックしやすい順番に入れ替える
+2. 購入者情報は、配送先≠購入者のときだけ表示（配送先＝購入者の場合は空欄に置き換える）
+3. オーダー番号は、1行目のみ表示する
+
+<br>
+
+## 参考：ユーザ操作画面
+
+<img src="https://raw.githubusercontent.com/hnsol/GAS-stores2B2-assistance/main/images/SS_configsheet.png" width="320px">
 
 
 
@@ -107,5 +132,4 @@ GASで行うタスクに絞って拡大すると、下図のようになる。
 |                      |                   | num2str               |                |
 |                      | outputArray2Sht   | smartInsSheet         |                |
 
-不必要に複雑にしているのか……！？　書き換えたときに、おもったよりは影響範囲が少ないとは思ったけれども。
 
