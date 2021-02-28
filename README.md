@@ -67,7 +67,7 @@ GASで行うタスクに絞って拡大すると、下図の通りとなる。
 
 ### ヤマト送り状作成支援
 
-<img src="https://raw.githubusercontent.com/hnsol/GAS-stores2B2-assistance/main/images/DaaC/C4_Compornet_B2.png" width=100%>
+<img src="https://raw.githubusercontent.com/hnsol/GAS-stores2B2-assistance/main/images/DaaC/C4_Component_B2.png" width=100%>
 
 1. オーダー情報CSVのうち、`01 ステータス`が`未入金`であるレコードを抽出し、送り状CSV形式（ヤマトB2クラウドに流せる形式）に変換する
 > - レコードが複数ある場合（注文品が複数の場合）、品名を`, `で連結
