@@ -13,18 +13,34 @@ LAYOUT_WITH_LEGEND()
 
 ' ---
 
-Person_Ext(user1, "お客様\n（購入者）", "Storesで商品を注文")
-Person_Ext(user2, "お客様\n（お届け先）", "商品を受け取る\n（≒購入者）")
-
-Boundary(c1, "利用しているシステム") {
-    System_Ext(stores, "STORES", "商品の販売および\n注文・出荷の管理", "shopify")
-    System(gas, "出荷作業支援", "手作業を減らすため\n作業の一部を自動化", "google_drive")
-    System_Ext(yamato, "ヤマト運輸", "伝票発行および\n集荷・配送", "truck")
+Boundary(b1, "お客さま"){
+    Person_Ext(user1, "お客様\n（購入者）", "STORESで商品を注文")
+    Person_Ext(user2, "お客様\n（配送先≒購入者）", "商品を受取り")    
 }
 
-Person(staff, "ショップスタッフ", "送り状作成\n出荷梱包作業")
+' Boundary(c1, "利用しているシステム") {
+    System_Ext(stores, "STORES", "商品の販売および\n注文・出荷の管理", "shopify")
+    System_Ext(yamato, "ヤマト運輸", "伝票発行および\n集荷・配送", "truck")
+' }
+
+Boundary(b2, "ショップ") {
+    Person(staff, "ショップスタッフ", "送り状作成\n出荷梱包作業")
+    System(gas, "出荷作業支援", "手作業を減らすため\n作業の一部を自動化", "google_drive")
+}
 
 ' ---
+
+Rel_D(user1,  stores, "商品の注文")
+Rel_R(user1,  user2,  "（贈答）")
+Rel_D(stores, staff,  "CSV")
+Rel_L(staff,  gas,    "CSV")
+Rel_R(gas,    staff,  "コピペ")
+Rel_L(yamato, staff,  "送り状発行")
+Rel_R(staff,  yamato, "配送依頼")
+Rel_U(yamato, user2,  "お届け")
+
+@enduml
+
 
 Rel(user1,  stores, "商品の注文")
 Rel(user1,  user2,  "（贈答）")
@@ -34,20 +50,3 @@ Rel(gas,    staff,  "コピペ")
 Rel(yamato, staff,  "送り状発行")
 Rel(staff,  yamato, "配送依頼")
 Rel(yamato, user2,  "お届け")
-
-@enduml
-
-
-Person_Ext(customer, "Customer", "A customer wanting to buy a horrendous hat")
-
-System(site, "eComm System", "Displays hats for sale, takes orders and payments")
-System(fulfil, "Fulfilment System", "Fulfilment system that tracks inventory and ships orders to customers")
-
-System_Ext(payments, "Payment Gateway", "Provides payment service") 
-
-Rel(customer, site, "Orders hat\nusing")
-Rel(site, payments, "Redirects\npayment to")
-Rel(site, fulfil, "Sends\norder to")
-Rel(fulfil, site, "Lists hats\nfor sale")
-Rel(fulfil, customer, "Ships\nhat to")
-Rel(fulfil, customer, "Emails\ninvoice to")

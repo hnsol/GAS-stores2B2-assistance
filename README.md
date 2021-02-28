@@ -3,24 +3,27 @@ assist editing Invoice data: from stores to yamato B2 Cloud
 
 ## はじめに
 
-[Stores（ストアーズ）](https://stores.jp/ec)には[「送り状CSV出力（ヤマトB2クラウド）」](https://officialmag.stores.jp/entry/kaigyou/kinou-okurijo-yamato)という機能あって、送り状を簡単に作成できる……はずだが、実際にはいくつか手作業が発生する。
+[Stores（ストアーズ）](https://stores.jp/ec)には[「送り状CSV出力（ヤマトB2クラウド）」](https://officialmag.stores.jp/entry/kaigyou/kinou-okurijo-yamato)という機能があって、送り状を簡単に作成できる……はずだが……。
 
-たとえば、送り状CSVデータをダウンロードしたら、Excelで編集したい人が多いと思われる。しかし、数値データの冒頭がゼロだと、ゼロが消えてしまう。
+おおまかな流れは下図の通り。注文をいただいて、発送する。
 
-> 電話番号フィールド`09087654321`を取り込むと`9087654321`となる。郵便番号も、北海道はゼロから始まる！ これらの手修正は避けたい……
+<img src="https://raw.githubusercontent.com/hnsol/GAS-stores2B2-assistance/main/images/DaaC/C4_Context_before.png" width=75%>
 
-そのほかにも（ショップ固有の条件で）、手入力が面倒なことがいろいろある。これらをまとめて、勉強も兼ねて、GAS(Google Apps Script)でやってみた。
+STORESから送り状用のCSVがダウンロードでき、「[手書き作業やデータのコピー＆ペーストの手間を省き、送り状発行業務の効率化](https://officialmag.stores.jp/entry/kaigyou/kinou-okurijo-yamato)」になるはずだが（なっていると思うが）、それでも意外とパソコン作業に手間がかかる。
+
+たとえば、送り状CSVデータをダウンロードしたら、Excelで編集したい人が多いと思う。ところが、データの冒頭がゼロだと、ゼロが消えてしまう。
+
+> 電話番号フィールド`09087654321`を取り込むと`9087654321`となる。郵便番号も、北海道はゼロから始まる！
+
+そのほかにも（ショップ固有の条件で）、いろいろ手作業がある。勉強も兼ねて、これらの自動化をGAS(Google Apps Script)で行った。
 
 <br>
 
 ## 全体ワークフローと、「コンピュータに任せたい」こと
 
+ワークフローをもう少し拡大する。下図の真ん中あたりの「出荷作業支援」が今回のGASが支援する範囲。手作業をなるべく減らし、ミスや手戻りがなくなるよう、GASにがんばってもらいたい。
 
-<img src="https://raw.githubusercontent.com/hnsol/GAS-stores2B2-assistance/main/images/DaaC/C4_Context_before.png" width=50%>
-
-
-下図の真ん中あたりの「出荷作業支援」が今回のGASが支援する範囲。手作業をなるべく減らし、ミスや手戻りがなくなるよう、GASにがんばってもらいたい。
-<img src="https://github.com/hnsol/GAS-stores2B2-assistance/blob/main/images/DaaC/C4_Context.png" width=50%>
+<img src="https://raw.githubusercontent.com/hnsol/GAS-stores2B2-assistance/main/images/DaaC/C4_Context.png" width=75%>
 
 
 ### コンピュータに任せたいこと
