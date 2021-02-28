@@ -1,11 +1,20 @@
 # GAS-stores2B2-assistance
 assist editing Invoice data: from stores to yamato B2 Cloud
 
-### 背景
+## はじめに
 
-[Stores（ストアーズ）](https://stores.jp/ec)には[「送り状CSV出力（ヤマトB2クラウド）」](https://officialmag.stores.jp/entry/kaigyou/kinou-okurijo-yamato)があって、送り状を簡単に作成できるはず……。
+[Stores（ストアーズ）](https://stores.jp/ec)には[「送り状CSV出力（ヤマトB2クラウド）」](https://officialmag.stores.jp/entry/kaigyou/kinou-okurijo-yamato)という機能あって、送り状を簡単に作成できるはず……。だけれど実際にはいくつか手作業が発生する。たとえば、ダウンロードしたCSVデータを、Excelで編集しようと考える人が多いと思われる。
 
-だけれども、実際にはいくつか手作業が発生する。csvデータが落ちてくるので、Excelで編集しようとすると、いろいろワナがある。
+ところが、数値データの冒頭にゼロが入っていると、ゼロが消えてしまう。たとえば`09087654321`という電話番号をExcelに取り込むと`9087654321`となる。郵便番号も、北海道はゼロから始まる。これらのデータを手で編集するはめになる。
+
+そのほかにも（ショップ固有の条件で）、手入力が面倒なことがいろいろある。これらをまとめて、勉強も兼ねて、GAS(Google Apps Script)でやってみた。
+
+## 全体ワークフロー
+
+<img src="https://github.com/hnsol/GAS-stores2B2-assistance/blob/main/images/DaaC/C4_Context.png" width="320px">
+
+
+## 
 
 - 数値データの冒頭にゼロが入っていると、ゼロが消えてしまう（郵便番号、電話番号）　←　これがExcel上ではいちばんクリティカル
 - ステータス「未発送」のみがcsv出力対象で、「未入金」を出力できない　←　これはstoresのデータ書き出しにオプションがないから
