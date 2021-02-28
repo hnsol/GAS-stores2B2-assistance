@@ -11,7 +11,9 @@ assist editing Invoice data: from stores to yamato B2 Cloud
 
 ## 全体ワークフロー
 
-<img src="https://github.com/hnsol/GAS-stores2B2-assistance/blob/main/images/DaaC/C4_Context.png" width="320px">
+<img src="https://github.com/hnsol/GAS-stores2B2-assistance/blob/main/images/DaaC/C4_Context.png" width=50%>
+
+<img src="https://github.com/hnsol/GAS-stores2B2-assistance/blob/main/images/DaaC/C4_Container.png" width=50%>
 
 
 ## 
