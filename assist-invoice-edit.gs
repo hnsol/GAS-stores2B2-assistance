@@ -591,7 +591,7 @@ function smartInsSheet(shtName) {
  */
 function formatOrder4Check(arrOD, config) {
 
-  // 重複列を削除
+  // 重複列を削除（配送先＝購入者の場合、フィールドを空欄に変えている）
   deleteOverlap(arrOD, config.odckolf, config.odckolt);
 
   // 必要列に集約　// NOTE: RowsじゃなくてColumnsだ……
