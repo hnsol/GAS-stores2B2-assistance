@@ -7,9 +7,7 @@ assist editing Invoice data: from stores to yamato B2 Cloud
 
 たとえば、送り状CSVデータをダウンロードしたら、Excelで編集したい人が多いと思われる。しかし、数値データの冒頭がゼロだと、ゼロが消えてしまう。
 
-> 電話番号フィールド`09087654321`を取り込むと`9087654321`となる。
-> 郵便番号も、北海道はゼロから始まる！ 
-> これらの手修正は避けたい……
+> 電話番号フィールド`09087654321`を取り込むと`9087654321`となる。郵便番号も、北海道はゼロから始まる！ これらの手修正は避けたい……
 
 そのほかにも（ショップ固有の条件で）、手入力が面倒なことがいろいろある。これらをまとめて、勉強も兼ねて、GAS(Google Apps Script)でやってみた。
 
@@ -17,10 +15,11 @@ assist editing Invoice data: from stores to yamato B2 Cloud
 
 ## 全体ワークフローと、「コンピュータに任せたい」こと
 
-下図の真ん中あたりの「出荷作業支援」が今回のGASが支援する範囲。
-手作業をなるべく減らし、ミスや手戻りがなくなるよう、
-GASにがんばってもらいたい。
 
+<img src="https://raw.githubusercontent.com/hnsol/GAS-stores2B2-assistance/main/images/DaaC/C4_Context_before.png" width=50%>
+
+
+下図の真ん中あたりの「出荷作業支援」が今回のGASが支援する範囲。手作業をなるべく減らし、ミスや手戻りがなくなるよう、GASにがんばってもらいたい。
 <img src="https://github.com/hnsol/GAS-stores2B2-assistance/blob/main/images/DaaC/C4_Context.png" width=50%>
 
 
