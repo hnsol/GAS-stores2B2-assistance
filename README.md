@@ -50,7 +50,12 @@ STORESから送り状用のCSVがダウンロードでき、「[手書き作業�
 
 STORESからCSVを受け取り、配送を依頼するまでの範囲のワークフローを拡大すると、下図のようになる。
 
-<img src="https://github.com/hnsol/GAS-stores2B2-assistance/blob/main/images/DaaC/C4_Container.png?raw=true" width=75%>
+<img src="https://raw.githubusercontent.com/hnsol/GAS-stores2B2-assistance/main/images/DaaC/C4_Container.png" width=75%>
+
+STORESからは、「オーダー」と「送り状」の2つのCSVをダウンロードすることができる。これらのCSVから、「チェックシート」と「送り状CSVを加工したシート」を作成する。
+
+- チェックシートは、できたものを印刷する。最終的な目視確認で使用
+- 送り状CSVを加工し、これをエクセルシートにコピペする
 
 
 ## GAS(Google Apps Script)
@@ -58,24 +63,8 @@ STORESからCSVを受け取り、配送を依頼するまでの範囲のワー�
 <img src="https://github.com/hnsol/GAS-stores2B2-assistance/blob/main/images/SS_configsheet.png" width="320px">
 
 
-### how it works
 
-- import order data (csv file), from stores
-- import B2 output data stores (csv), from stores
-- set data sheet name at cells in the spreadsheet
-- click 'start' button
-- modified B2 output data sheet are generated as a new sheet
-
-### this assistant does...
-
-- avoid deleting '0' on top of string
-- concatinating '未発送' record
-- some constant valies are filled automatically
-
-
-### this assistant doesn't...
-
-### function structure
+## function structure
 
 
 | #01           | #02                  | #03               |

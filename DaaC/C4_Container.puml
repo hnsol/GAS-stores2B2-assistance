@@ -21,13 +21,13 @@ Boundary(b1, "STORES") {
     System_Ext(stores1, "ショップページ", "オーダーCSV出力\n送り状CSV出力", "cloud")
 }
 Boundary(b2, "GAS (Google Apps Script)") {
-    System(gas1, "ヤマト伝票作成支援", "送り状CSVを加工", "google_drive")
+    System(gas1, "ヤマト送り状作成支援", "送り状CSVを加工", "google_drive")
     System(gas2, "チェックシート作成", "オーダーCSVを加工", "google_drive")
 }
 Boundary(b4, "ショップ") {
     Person(staff,   "スタッフ", "パソコンで各種作業")
     Container(excel,   "エクセル", "MS Excel", "送り状データ編集", "file_excel")
-    Container(printer, "プリンタ", "インクジェット", "送り状印刷", "print")
+    Container(printer, "プリンタ", "xxxxxx", "送り状ラベル印刷", "print")
 }
 Boundary(b3, "ヤマト運輸") {
     System_Ext(yamato1, "送り状発行システム\nB2クラウド", " ", "cloud")
