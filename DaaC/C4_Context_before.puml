@@ -30,7 +30,7 @@ System_Ext(yamato, "ヤマト運輸", "伝票発行および\n集荷・配送", 
 Rel_R(user1,  stores, "注文")
 Rel_D(stores, staff,  "CSV")
 Rel_L(staff,  pc,     "各種作業")
-Rel_D(staff,  yamato, "配送依頼")
+Rel_R(staff,  yamato, "配送依頼")
 
 @enduml
 
