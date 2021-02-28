@@ -2,12 +2,6 @@
 
 !include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
 
-' AddTagSupport("v1.0", $borderColor="#d73027")
-' AddTagSupport("v1.1", $fontColor="#d73027")
-' AddTagSupport("v1.0", $borderColor="#F53126")
-' AddTagSupport("v1.1", $fontColor="#F53126")
-' AddTagSupport("v1.0", $borderColor="#F5234B")
-' AddTagSupport("v1.1", $fontColor="#F5234B")
 AddTagSupport("v1.0", $borderColor="#F58B00")
 AddTagSupport("v1.1", $fontColor="#F58B00")
 
@@ -23,25 +17,33 @@ LAYOUT_WITH_LEGEND()
 
 ' ---
 
-Person_Ext(user1, "お客様\n（購入者）", "Storesで商品を注文")
+Person_Ext(user1, "お客様\n（購入者）", "STORESで商品を注文")
 System_Ext(stores, "STORES", "商品の販売および\n注文・出荷の管理", "shopify")
 Boundary(b1, "ショップ") {
     Person(staff, "ショップスタッフ", "送り状作成\n出荷梱包作業")
-    System(pc, "パソコン作業\n※手作業※", "CSVデータ加工\n追加情報入力", "laptop_mac", $tags="v1.0+v1.1")
+    System(pc, "パソコン作業\n※意外に手作業発生※", "CSVデータ加工\n追加情報入力", "laptop_mac", $tags="v1.0+v1.1")
 }
 System_Ext(yamato, "ヤマト運輸", "伝票発行および\n集荷・配送", "truck")
-Person_Ext(user2, "お客様\n（配送先）", "商品受取り≒購入者")
 
 ' ---
 
 Rel_R(user1,  stores, "注文")
 Rel_D(stores, staff,  "CSV")
-Rel_R(staff,  pc, "各種作業")
+Rel_L(staff,  pc,     "各種作業")
 Rel_D(staff,  yamato, "配送依頼")
-Rel_L(yamato, user2,  "お届け")
 
 @enduml
 
+
+' AddTagSupport("v1.0", $borderColor="#d73027")
+' AddTagSupport("v1.1", $fontColor="#d73027")
+' AddTagSupport("v1.0", $borderColor="#F53126")
+' AddTagSupport("v1.1", $fontColor="#F53126")
+' AddTagSupport("v1.0", $borderColor="#F5234B")
+' AddTagSupport("v1.1", $fontColor="#F5234B")
+
+' Rel_L(yamato, user2,  "お届け")
+' Person_Ext(user2, "お客様\n（配送先）", "商品受取り≒購入者")
 
 ' Rel(user1,  user2,  "（贈答）")
 ' Rel(staff,  gas,    "CSV")
