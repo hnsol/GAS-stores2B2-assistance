@@ -13,8 +13,6 @@
 !include FONTAWESOME/print.puml
 !include FONTAWESOME/truck.puml
 
-LAYOUT_WITH_LEGEND()
-
 ' ---
 
 Boundary(b1, "STORES") {
@@ -36,55 +34,18 @@ Boundary(b3, "ヤマト運輸") {
 
 ' ---
 
-Rel(stores1, staff, "CSV")
-Rel(staff, gas1, "CSV")
-Rel(staff, gas2, "CSV")
-Rel_R(staff, excel, "編集")
-Rel(gas1, excel, "コピペ")
-Rel(gas2, staff, "印刷")
-Rel(excel, yamato1, "Excel")
+Rel(stores1, staff,   "CSV")
+Rel(staff,   gas1,    "CSV")
+Rel(staff,   gas2,    "CSV")
+Rel_R(staff, excel,   "編集")
+Rel(gas1,    excel,   "コピペ")
+Rel(gas2,    staff,   "印刷")
+Rel(excel,   yamato1, "Excel")
 Rel(yamato1, printer, "印刷")
 Rel(printer, yamato2, "配送依頼")
 
+' ---
+
+SHOW_DYNAMIC_LEGEND()
+
 @enduml
-
-
-
-' ' ______
-
-' Rel(stores2, staff, "CSV")
-
-' Boundary(b1, "STORES") {
-' '    System_Ext(orderdb, "オーダー情報", " ", "database")
-'     System_Ext(stores1, "STORES管理者ページ", "オーダー情報\nヤマトB2伝票", "file_csv")
-' '    System_Ext(stores2, "STORES管理者ページ", "ヤマトB2伝票用CSV発行", "file_csv")
-' }
-' Boundary(b2, "GAS (Google App Script)") {
-'     System(gas1, "ヤマト伝票作成支援", "項目の自動入力", "google_drive")
-'     System(gas2, "チェックシート作成", "オーダー情報を加工", "google_drive")
-' }
-' Boundary(b4, "ショップ") {
-' '    System(staff, "スタッフのパソコン", "各種作業の実施", "laptop_mac")
-'     Person(staff, "ショップスタッフ", "パソコンで各種作業")
-'     System(excel, "エクセルシート", "出荷伝票の編集", "file_excel")
-' }
-' Boundary(b3, "ヤマト運輸") {
-'     System_Ext(yamato1, "B2伝票発行システム", " ", "print")
-'     System_Ext(yamato2, "集荷・配送", " ", "truck")
-' }
-
-
-' ' ---
-
-' ' Rel(orderdb, stores1, "データ抽出")
-' ' Rel(orderdb, stores2, "データ変換")
-' Rel(stores1, staff, "CSV")
-' ' Rel(stores2, staff, "CSV")
-' Rel(staff, gas1, "CSV")
-' Rel(staff, gas2, "CSV")
-' Rel_L(staff, excel, "編集")
-' Rel(gas1, excel, "コピペ")
-' Rel(gas2, staff, "印刷")
-' Rel(excel, yamato1, "Excel")
-' Rel(yamato1, staff, "印刷")
-' Rel(staff, yamato2, "配送依頼")

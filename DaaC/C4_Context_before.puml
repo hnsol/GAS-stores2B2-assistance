@@ -13,8 +13,6 @@ AddTagSupport("v1.1", $fontColor="#F58B00")
 !include FONTAWESOME/truck.puml
 !include MATERIAL/laptop_mac.puml
 
-LAYOUT_WITH_LEGEND()
-
 ' ---
 
 Person_Ext(user1, "お客様\n（購入者）", "STORESで商品を注文")
@@ -32,20 +30,8 @@ Rel_D(stores, staff,  "CSV")
 Rel_L(staff,  pc,     "各種作業")
 Rel_R(staff,  yamato, "配送依頼")
 
+' ---
+
+SHOW_DYNAMIC_LEGEND()
+
 @enduml
-
-
-' AddTagSupport("v1.0", $borderColor="#d73027")
-' AddTagSupport("v1.1", $fontColor="#d73027")
-' AddTagSupport("v1.0", $borderColor="#F53126")
-' AddTagSupport("v1.1", $fontColor="#F53126")
-' AddTagSupport("v1.0", $borderColor="#F5234B")
-' AddTagSupport("v1.1", $fontColor="#F5234B")
-
-' Rel_L(yamato, user2,  "お届け")
-' Person_Ext(user2, "お客様\n（配送先）", "商品受取り≒購入者")
-
-' Rel(user1,  user2,  "（贈答）")
-' Rel(staff,  gas,    "CSV")
-' Rel(gas,    staff,  "コピペ")
-' Rel(yamato, staff,  "送り状発行")

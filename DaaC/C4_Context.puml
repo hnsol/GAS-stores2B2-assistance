@@ -9,8 +9,6 @@
 !include FONTAWESOME/google_drive.puml
 !include FONTAWESOME/truck.puml
 
-LAYOUT_WITH_LEGEND()
-
 ' ---
 
 Boundary(b1, "お客さま"){
@@ -39,14 +37,9 @@ Rel_L(yamato, staff,  "送り状発行")
 Rel_R(staff,  yamato, "配送依頼")
 Rel_U(yamato, user2,  "お届け")
 
+' ---
+
+SHOW_DYNAMIC_LEGEND()
+
 @enduml
 
-
-Rel(user1,  stores, "商品の注文")
-Rel(user1,  user2,  "（贈答）")
-Rel(stores, staff,  "CSV")
-Rel(staff,  gas,    "CSV")
-Rel(gas,    staff,  "コピペ")
-Rel(yamato, staff,  "送り状発行")
-Rel(staff,  yamato, "配送依頼")
-Rel(yamato, user2,  "お届け")
