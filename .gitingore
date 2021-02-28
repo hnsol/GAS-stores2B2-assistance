@@ -1,6 +1,6 @@
 # Add below lines to exclude OS settings and caches
 .trash/
-.DS_Store
+*.DS_Store
 
 # exclude VS code Project related folder
-.vscode
+.vscode/*
