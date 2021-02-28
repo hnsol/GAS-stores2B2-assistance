@@ -13,6 +13,8 @@ assist editing Invoice data: from stores to yamato B2 Cloud
 
 <img src="https://github.com/hnsol/GAS-stores2B2-assistance/blob/main/images/DaaC/C4_Context.png" width=50%>
 
+図の真ん中の「出荷作業支援」が今回のGASが支援する範囲。
+
 <img src="https://github.com/hnsol/GAS-stores2B2-assistance/blob/main/images/DaaC/C4_Container.png" width=50%>
 
 
