@@ -713,7 +713,6 @@ function deleteOverlapOrderNum(array, row) {
  * |                      |                    |                       | fillSendrValue |
  * |                      |                    | num2str               |                |
  * |                      | outputArray2Sht    | smartInsSheet         |                |
- * |                      |                    |                       |                |
  * | generateOrderCkSht() | initConfig         | convertSht2Obj        |                |
  * |                      | sht2arr            |                       |                |
  * |                      | formatOrder4Check  | deleteOverlap         |                |

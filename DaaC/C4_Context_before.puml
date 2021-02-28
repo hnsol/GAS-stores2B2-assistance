@@ -2,8 +2,7 @@
 
 !include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
 
-AddTagSupport("v1.0", $borderColor="#F58B00")
-AddTagSupport("v1.1", $fontColor="#F58B00")
+AddTagSupport("humanwork", $borderColor="#F58B00", $fontColor="#F58B00")
 
 !define FONTAWESOME https://raw.githubusercontent.com/tupadr3/plantuml-icon-font-sprites/master/font-awesome-5
 !define MATERIAL https://raw.githubusercontent.com/tupadr3/plantuml-icon-font-sprites/master/material
@@ -19,7 +18,7 @@ Person_Ext(user1, "お客様\n（購入者）", "STORESで商品を注文")
 System_Ext(stores, "STORES", "商品の販売および\n注文・出荷の管理", "shopify")
 Boundary(b1, "ショップ") {
     Person(staff, "ショップスタッフ", "送り状作成\n出荷梱包作業")
-    System(pc, "パソコン作業\n※意外に手作業発生※", "CSVデータ加工\n追加情報入力", "laptop_mac", $tags="v1.0+v1.1")
+    System(pc, "パソコン作業\n※意外に手作業発生※", "CSVデータ加工\n追加情報入力", "laptop_mac", $tags="humanwork")
 }
 System_Ext(yamato, "ヤマト運輸", "伝票発行および\n集荷・配送", "truck")
 

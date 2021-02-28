@@ -3,19 +3,19 @@ assist editing Invoice data: from stores to yamato B2 Cloud
 
 ## はじめに
 
-[Stores（ストアーズ）](https://stores.jp/ec)には[「送り状CSV出力（ヤマトB2クラウド）」](https://officialmag.stores.jp/entry/kaigyou/kinou-okurijo-yamato)という機能があって、送り状を簡単に作成できる……はずだが……。
+[Stores（ストアーズ）](https://stores.jp/ec)には[「送り状CSV出力（ヤマトB2クラウド）」](https://officialmag.stores.jp/entry/kaigyou/kinou-okurijo-yamato)という機能があって、送り状を簡単に作成できる……はず……だが……。
 
-おおまかなワークフロー（作業の流れ）は下図の通り。注文をいただいて、発送する。
+おおまかなワークフロー（作業の流れ）は下図の通り。お客様から注文をいただいて、発送する。
 
 <img src="https://raw.githubusercontent.com/hnsol/GAS-stores2B2-assistance/main/images/DaaC/C4_Context_before.png" width=75%>
 
 STORESから送り状用のCSVがダウンロードでき、「[手書き作業やデータのコピー＆ペーストの手間を省き、送り状発行業務の効率化](https://officialmag.stores.jp/entry/kaigyou/kinou-okurijo-yamato)」になるはずだが（なっていると思うが）、それでも意外とパソコン作業に手間がかかる。
 
-たとえば、送り状CSVデータをダウンロードしたら、Excelで編集したい人が多いと思う。ところが、データの冒頭がゼロだと、ゼロが消えてしまう。
+たとえば、送り状CSVデータをダウンロードしたら、Excelで編集したい人が多いと思う。ところが、データフィールド（項目）の冒頭がゼロだと、ゼロが消えてしまう。
 
 > 電話番号フィールド`09087654321`を取り込むと`9087654321`となる。郵便番号も、北海道はゼロから始まる！
 
-そのほかにも（ショップ固有の条件で）、いろいろ手作業がある。勉強も兼ねて、これらの自動化をGAS(Google Apps Script)で行った。
+そのほかにも（ショップ固有の条件で）、いろいろ手作業がある。勉強も兼ねて、これらの自動化をGAS(Google Apps Script)で行った。概算だが、時間にして45%、送り状作成作業を短縮できた。
 
 <br>
 
@@ -63,6 +63,8 @@ STORESからは、「オーダー」と「送り状」の2つのCSVをダウン�
 
 GASで行うタスクに絞って拡大すると、下図の通りとなる。
 
+<br>
+
 ### ヤマト送り状作成支援
 
 <img src="https://raw.githubusercontent.com/hnsol/GAS-stores2B2-assistance/main/images/DaaC/C4_Compornet_B2.png" width=100%>
@@ -77,11 +79,13 @@ GASで行うタスクに絞って拡大すると、下図の通りとなる。
 > - 配送先≠購入者の場合は、オーダー情報からデータを抽出して置き換える
 > - そのほかは、固定値を埋められるものを埋める
 
+<br>
+
 ### オーダー情報からチェックシートを作成
 
 <img src="https://raw.githubusercontent.com/hnsol/GAS-stores2B2-assistance/main/images/DaaC/C4_Component_order.png" width=100%>
 
-1. 必要列に絞り、チェックしやすい順番に入れ替える
+1. 必要列に絞り、チェックしやすいよう順番を入れ替える
 2. 購入者情報は、配送先≠購入者のときだけ表示（配送先＝購入者の場合は空欄に置き換える）
 3. オーダー番号は、1行目のみ表示する
 
@@ -92,44 +96,49 @@ GASで行うタスクに絞って拡大すると、下図の通りとなる。
 <img src="https://raw.githubusercontent.com/hnsol/GAS-stores2B2-assistance/main/images/SS_configsheet.png" width="320px">
 
 
+<br>
 
 ## function structure
 
 
-| #01           | #02                  | #03               |
-| ------------- | -------------------- | ----------------- |
-| buttonStart() | generateInvoiceSht() | initConfig        |
-|               |                      | sht2arr           |
-|               |                      | clipWPLine        |
-|               |                      | mapOrderToB2      |
-|               |                      | concat2DArray     |
-|               |                      | formatYamatB2     |
-|               |                      | outputArray2Sht   |
-|               | generateOrderCkSht() | initConfig        |
-|               |                      | sht2arr           |
-|               |                      | formatOrder4Check |
-|               |                      | outputArray2Sht   |
-|               |                      |                   |
-
-| #02                  | #03               | #04                   | #05            |
-| -------------------- | ----------------- | --------------------- | -------------- |
-| generateInvoiceSht() | initConfig        | convertSht2Obj        |                |
-|                      | sht2arr           |                       |                |
-|                      | clipWPLine        | clipLine              |                |
-|                      |                   | groupConcat           |                |
-|                      | mapOrderToB2      |                       |                |
-|                      | concat2DArray     |                       |                |
-|                      | formatYamatB2     | sortByOrderDate       |                |
-|                      |                   | xxxUme                | fillConstValue |
-|                      |                   | num2str               |                |
-|                      | outputArray2Sht   | smartInsSheet         |                |
-|                      |                   |                       |                |
-| generateOrderCkSht() | initConfig        | convertSht2Obj        |                |
-|                      | sht2arr           |                       |                |
-|                      | formatOrder4Check | deleteOverlap         |                |
-|                      |                   | clipRowsforCheck      |                |
-|                      |                   | deleteOverlapOrderNum |                |
-|                      |                   | num2str               |                |
-|                      | outputArray2Sht   | smartInsSheet         |                |
 
 
+| #01           | #02                  | #03                |
+| ------------- | -------------------- | ------------------ |
+| buttonStart() | generateInvoiceSht() | initConfig         |
+|               |                      | sht2arr            |
+|               |                      | clipWPLine         |
+|               |                      | mapOrderToB2       |
+|               |                      | modifySenderYamato | 
+|               |                      | concat2DArray      |
+|               |                      | formatYamatB2      |
+|               |                      | outputArray2Sht    |
+|               | generateOrderCkSht() | initConfig         |
+|               |                      | sht2arr            |
+|               |                      | formatOrder4Check  |
+|               |                      | outputArray2Sht    |
+|               |                      |                    |
+
+| #02                  | #03                | #04                   | #05            |
+| -------------------- | ------------------ | --------------------- | -------------- |
+| generateInvoiceSht() | initConfig         | convertSht2Obj        |                |
+|                      | sht2arr            |                       |                |
+|                      | clipWPLine         | clipLine              |                |
+|                      |                    | groupConcat           |                |
+|                      | mapOrderToB2       |                       |                |
+|                      | modifySenderYamato |                       |                |
+|                      | concat2DArray      |                       |                |
+|                      | formatYamatB2      | sortByOrderDate       |                |
+|                      |                    | xxxUme                | fillConstValue |
+|                      |                    |                       | fillSendrValue |
+|                      |                    | num2str               |                |
+|                      | outputArray2Sht    | smartInsSheet         |                |
+| generateOrderCkSht() | initConfig         | convertSht2Obj        |                |
+|                      | sht2arr            |                       |                |
+|                      | formatOrder4Check  | deleteOverlap         |                |
+|                      |                    | clipRowsforCheck      |                |
+|                      |                    | deleteOverlapOrderNum |                |
+|                      |                    | num2str               |                |
+|                      | outputArray2Sht    | smartInsSheet         |                |
+
+- やっていることは単純なので、もっとシンプルに書けないものかと自問自答している。
