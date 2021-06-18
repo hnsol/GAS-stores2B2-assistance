@@ -14,8 +14,11 @@ function buttonStart() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const shtStart = ss.getActiveSheet();
 
-  generateInvoiceSht(); // 入金待ちデータ取り込み & 編集支援
+  // チェックシート作成を先にした
+  // NOTE: 入金待ち取り込みのほうが、処理が多いので、失敗する可能性が高い
+  // せめてチェックシートだけでもアウトプットされるようにした
   generateOrderCkSht(); // オーダー情報からチェックシートを作成
+  generateInvoiceSht(); // 入金待ちデータ取り込み & 編集支援
 
   ss.setActiveSheet(shtStart); // 開始時のシートにフォーカスを戻す
 
@@ -48,11 +51,11 @@ function generateInvoiceSht() {
   // 入金待ちの配列を、オーダー情報形式からヤマトB2形式に変換
   var arrWPUB2 = mapOrderToB2(arrWPU, config);
 
-  // ※追加※オーダー情報のうち、配送先と購入者が異なる場合、ヤマトB2データを修正
-  modifySenderYamato(arrYamat, arrOrder, config);
-
   // yamato.csvデータと、入金待ちの配列を結合
   var arrWPUB2C = concat2DArray(arrYamat, arrWPUB2, 0);
+
+  // ※順番変更※追加※オーダー情報のうち、配送先と購入者が異なる場合、ヤマトB2データを修正
+  modifySenderYamato(arrWPUB2C, arrOrder, config);
 
   // ※追加※結合済み出力前データの整形
   formatYamatB2(arrWPUB2C, config);
@@ -358,6 +361,7 @@ function modifySenderYamato(arrYamat, arrOrder, config) {
   })
 
   // 取得したオーダー番号をキーにして、ヤマトB2の依頼主情報を書き換える
+  // NOTE: 通常、依頼主はOKSMR。ギフトなので依頼主を購入者にする
   const arrYamatOrder = transpose(arrYamat)[0]; // オーダー番号だけ並べた1次元配列
 
   // arrYamatのオーダー情報が一致する行を特定し、書き換え
@@ -591,7 +595,7 @@ function smartInsSheet(shtName) {
  */
 function formatOrder4Check(arrOD, config) {
 
-  // 重複列を削除（配送先＝購入者の場合、フィールドを空欄に変えている）
+  // 重複列を削除
   deleteOverlap(arrOD, config.odckolf, config.odckolt);
 
   // 必要列に集約　// NOTE: RowsじゃなくてColumnsだ……
@@ -666,59 +670,32 @@ function deleteOverlapOrderNum(array, row) {
   return array;
 }
 
-
-
-// /**
-//  * 2次元配列の行と列を入れ替えます
-//  */
-// function transpose(array) {
-//   // const transpose = a => a[0].map((_, c) => a.map(r => r[c]));
-//   console.log(array[0]);
-//   array[0].map((_, c) => array.map(r => r[c]));
-//   console.log(array[0]);
-  
-//   return array;
-// }  
-
+/**
+ * テストツールに向けて試している
+ * NOTE: テスト自動化には至っていないが、コード修正の助けになっている
+ */
+function testtool() {
+  // シートAとシートBを比較
+  isEquivalentSht('20210607_yamato_cp', '0607_yamato_cp_t');
+  isEquivalentSht('20210607_order_ck',  '0607_order_ck_t');
+  isEquivalentSht('20210614_yamato_cp', '0614_yamato_cp_t');
+  isEquivalentSht('20210614_order_ck',  '0614_order_ck_t');
+}
 
 /**
- * 
- * | #01           | #02                  | #03                |
- * | ------------- | -------------------- | ------------------ |
- * | buttonStart() | generateInvoiceSht() | initConfig         |
- * |               |                      | sht2arr            |
- * |               |                      | clipWPLine         |
- * |               |                      | mapOrderToB2       |
- * |               |                      | modifySenderYamato | 
- * |               |                      | concat2DArray      |
- * |               |                      | formatYamatB2      |
- * |               |                      | outputArray2Sht    |
- * |               | generateOrderCkSht() | initConfig         |
- * |               |                      | sht2arr            |
- * |               |                      | formatOrder4Check  |
- * |               |                      | outputArray2Sht    |
- * |               |                      |                    |
- * 
- * | #02                  | #03                | #04                   | #05            |
- * | -------------------- | ------------------ | --------------------- | -------------- |
- * | generateInvoiceSht() | initConfig         | convertSht2Obj        |                |
- * |                      | sht2arr            |                       |                |
- * |                      | clipWPLine         | clipLine              |                |
- * |                      |                    | groupConcat           |                |
- * |                      | mapOrderToB2       |                       |                |
- * |                      | modifySenderYamato |                       |                |
- * |                      | concat2DArray      |                       |                |
- * |                      | formatYamatB2      | sortByOrderDate       |                |
- * |                      |                    | xxxUme                | fillConstValue |
- * |                      |                    |                       | fillSendrValue |
- * |                      |                    | num2str               |                |
- * |                      | outputArray2Sht    | smartInsSheet         |                |
- * | generateOrderCkSht() | initConfig         | convertSht2Obj        |                |
- * |                      | sht2arr            |                       |                |
- * |                      | formatOrder4Check  | deleteOverlap         |                |
- * |                      |                    | clipRowsforCheck      |                |
- * |                      |                    | deleteOverlapOrderNum |                |
- * |                      |                    | num2str               |                |
- * |                      | outputArray2Sht    | smartInsSheet         |                |
- * 
+ * 2つのシートを比較し、同じかどうか判定します
+ * @param {string} shtNameA 比較するシートの名称
+ * @param {string} shtNameB 比較されるシートの名称（こちらを正とみなす）
+ *
+ * NOTE: booleanを返すようになったほうがいいとおもうが、今はconsole.logに吐き出し
  */
+function isEquivalentSht(shtNameA, shtNameB) {
+
+  // 2つのシートを配列に読み込む
+  var arrA = sht2arr(shtNameA);  // 検証するもの
+  var arrB = sht2arr(shtNameB);  // 正と想定しているもの
+
+  // 配列Aと配列BをJSON.stringifyを使って比較する
+  console.log('Comparing', shtNameA, 'to', shtNameB, ': ', JSON.stringify(arrA) === JSON.stringify(arrB));
+
+}
