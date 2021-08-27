@@ -72,39 +72,7 @@ STORESからは、「オーダー」と「送り状」の2つのCSVをダウン�
 
 GASで行うタスクに絞って拡大すると、下図の通りとなる。
 
-<div hidden>
-
-```
-@startuml Diagram
-
-!includeurl https://raw.githubusercontent.com/matthewjosephtaylor/plantuml-style/master/style.pu
-
-top to bottom direction
-
-database "STORES"                  as stres
-file     "オーダー情報CSV"         as order
-file     "ヤマト送り状CSV"         as ymtin
-file     "オーダーチェック用CSV"   as ordch
-file     "ヤマト送り状CVS（追加）" as ymtot
-
-stres --> order
-stres --> ymtin
-
-order ---> ordch
-note right
-  チェックに必要な項目を抽出
-  チェックしやすいように加工
-end note
-
-order --> ymtot : 未入金を抽出
-ymtin --> ymtot : 定形情報を入力
-
-@enduml
-```
-
-</div>
-
-![](Diagram.svg)
+![img](https://i.gyazo.com/eea581bbbe1b3913c1ce0e9f4aa6dcb3.png)
 
 <br>
 
