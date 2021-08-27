@@ -248,7 +248,7 @@ function groupConcat(arr, key, col, dlm){
  * オーダー形式のデータをB2形式へマッピングします
  * @param  {Array} arrOrder 操作対象の2次元配列   
  * @return {Array} arrB2    連結後の2次元配列 
- * TODO:configに外出しするのが望ましい
+ * TODO:列を指定する数字は、configに外出しするのが望ましい
  */
 function mapOrderToB2(arrOrder, config) {
   var arrB2 = [];
@@ -261,12 +261,12 @@ function mapOrderToB2(arrOrder, config) {
   var io_phonenum = 38, ib_phonenum = 8;  // お届け先電話番号
   var io_yubinnum = 35, ib_yubinnum = 10; // お届け先郵便番号
   var io_senditem = 8,  ib_senditem = 27; // 品名１
-  var io_emailadd = 45, ib_emailadd = 48; // お届け予定ｅメール
-  var io_comments = 47, ib_comments = 95; // 備考欄
-  var io_memomemo = 48, ib_memomemo = 96; // メモ
+  var io_emailadd = 47, ib_emailadd = 48; // お届け予定ｅメール
+  var io_comments = 49, ib_comments = 95; // 備考欄
+  var io_memomemo = 50, ib_memomemo = 96; // メモ
   var io_wpayment = 2,  ib_wpayment = 97; // 支払い方法
   
-  // 固定値
+  // B2形式の特定列を固定値で埋める
   var ib_sendphon = 19, cb_sendphon = config.constst[0]; // ご依頼主電話番号
   var ib_sendyubn = 21, cb_sendyubn = config.constst[1]; // ご依頼主郵便番号
   var ib_sendaddr = 22, cb_sendaddr = config.constst[2]; // ご依頼主住所
@@ -356,8 +356,8 @@ function modifySenderYamato(arrYamat, arrOrder, config) {
   // HACK: ここは手抜きだがハードコーディング
   // NOTE: configに書き出してもあとで余計に混乱する気が
   arrPick.forEach( line => {
-    arrModYamato.push( [line[0], line[44], line[41], line[42]+line[43],
-    '', line[39] + ' ' + line[40]]);
+    arrModYamato.push( [line[0], line[46], line[43], line[44]+line[45],
+    '', line[41] + ' ' + line[42]]);
   })
 
   // 取得したオーダー番号をキーにして、ヤマトB2の依頼主情報を書き換える
