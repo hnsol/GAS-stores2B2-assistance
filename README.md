@@ -1,11 +1,12 @@
 # GAS-stores2B2-assistance
-assist editing Invoice data: from stores to yamato B2 Cloud
+
+送り状データの編集支援：STORESデータをヤマトB2クラウドデータに変換
 
 ## はじめに
 
 [Stores（ストアーズ）](https://stores.jp/ec)には[「送り状CSV出力（ヤマトB2クラウド）」](https://officialmag.stores.jp/entry/kaigyou/kinou-okurijo-yamato)という機能があって、送り状を簡単に作成できる……はず……だが……。
 
-おおまかなワークフロー（作業の流れ）は下図の通り。お客様から注文をいただいて、発送する。
+おおまかな業務のワークフロー（作業の流れ）は下図の通り。お客様から注文をいただいて、発送する。
 
 <img src="https://raw.githubusercontent.com/hnsol/GAS-stores2B2-assistance/main/images/DaaC/C4_Context_before.png" width=75%>
 
@@ -15,7 +16,7 @@ STORESから送り状用のCSVがダウンロードでき、「[手書き作業�
 
 > 電話番号フィールド`09087654321`を取り込むと`9087654321`となる。郵便番号も、北海道はゼロから始まる！
 
-そのほかにも（ショップ固有の条件で）、いろいろ手作業がある。勉強も兼ねて、これらの自動化をGAS(Google Apps Script)で行った。概算だが、時間にして45%、送り状作成作業を短縮できた。
+そのほかにも（ショップ固有の条件で）いろいろ手作業がある。これらの自動化をGAS(Google Apps Script)で行った。概算だが、時間にして45%、送り状作成作業を短縮できた。
 
 <br>
 
@@ -71,6 +72,31 @@ STORESからは、「オーダー」と「送り状」の2つのCSVをダウン�
 
 GASで行うタスクに絞って拡大すると、下図の通りとなる。
 
+```plantUML
+!includeurl https://raw.githubusercontent.com/matthewjosephtaylor/plantuml-style/master/style.pu
+
+top to bottom direction
+
+database "STORES"                  as stres
+file     "オーダー情報CSV"         as order
+file     "ヤマト送り状CSV"         as ymtin
+file     "オーダーチェック用CSV"   as ordch
+file     "ヤマト送り状CVS（追加）" as ymtot
+
+stres --> order
+stres --> ymtin
+
+order ---> ordch
+note right
+  チェックに必要な項目を抽出
+  チェックしやすいように加工
+end note
+
+order --> ymtot : 未入金を抽出
+ymtin --> ymtot : 定形情報を入力
+
+```
+
 <br>
 
 ### ヤマト送り状作成支援
@@ -102,7 +128,6 @@ GASで行うタスクに絞って拡大すると、下図の通りとなる。
 ## 参考：ユーザ操作画面
 
 <img src="https://raw.githubusercontent.com/hnsol/GAS-stores2B2-assistance/main/images/SS_configsheet.png" width="320px">
-
 
 <br>
 
