@@ -72,7 +72,11 @@ STORESからは、「オーダー」と「送り状」の2つのCSVをダウン�
 
 GASで行うタスクに絞って拡大すると、下図の通りとなる。
 
-```plantUML
+<div hidden>
+
+```
+@startuml Diagram
+
 !includeurl https://raw.githubusercontent.com/matthewjosephtaylor/plantuml-style/master/style.pu
 
 top to bottom direction
@@ -95,7 +99,12 @@ end note
 order --> ymtot : 未入金を抽出
 ymtin --> ymtot : 定形情報を入力
 
+@enduml
 ```
+
+</div>
+
+![](Diagram.svg)
 
 <br>
 
