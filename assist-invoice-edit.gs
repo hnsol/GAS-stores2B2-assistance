@@ -249,6 +249,7 @@ function groupConcat(arr, key, col, dlm){
  * @param  {Array} arrOrder 操作対象の2次元配列   
  * @return {Array} arrB2    連結後の2次元配列 
  * TODO:列を指定する数字は、configに外出しするのが望ましい
+ * NOTE:とりあえず（美醜は別として）configに外出しした
  */
 function mapOrderToB2(arrOrder, config) {
   var arrB2 = [];
@@ -257,27 +258,30 @@ function mapOrderToB2(arrOrder, config) {
   if (arrOrder.length < 1) return arrB2;
 
   // インデックス設定：1to1マッピング　※列数から1マイナスのこと
-  var io_ordernum = 0,  ib_ordernum = 0;  // オーダー番号
-  var io_phonenum = 39, ib_phonenum = 8;  // お届け先電話番号
-  var io_yubinnum = 36, ib_yubinnum = 10; // お届け先郵便番号
-  var io_senditem = 8,  ib_senditem = 27; // 品名１
-  var io_emailadd = 48, ib_emailadd = 48; // お届け予定ｅメール
-  var io_comments = 50, ib_comments = 95; // 備考欄
-  var io_memomemo = 51, ib_memomemo = 96; // メモ
-  var io_wpayment = 2,  ib_wpayment = 97; // 支払い方法
+  // NOTE: io as index of order data, ib as index of B2 data
+  var io_ordernum = config.io_ordernum, ib_ordernum = config.ib_ordernum; // order,B2 オーダー番号
+  var io_phonenum = config.io_phonenum, ib_phonenum = config.ib_phonenum; // order,B2 お届け先電話番号
+  var io_yubinnum = config.io_yubinnum, ib_yubinnum = config.ib_yubinnum; // order,B2 お届け先郵便番号
+  var io_senditem = config.io_senditem, ib_senditem = config.ib_senditem; // order,B2 品名１
+  var io_emailadd = config.io_emailadd, ib_emailadd = config.ib_emailadd; // order,B2 お届け予定ｅメール
+  var io_comments = config.io_comments, ib_comments = config.ib_comments; // order,B2 備考欄
+  var io_memomemo = config.io_memomemo, ib_memomemo = config.ib_memomemo; // order,B2 メモ
+  var io_wpayment = config.io_wpayment, ib_wpayment = config.ib_wpayment; // order,B2 支払い方法
   
   // B2形式の特定列を固定値で埋める
-  var ib_sendphon = 19, cb_sendphon = config.constst[0]; // ご依頼主電話番号
-  var ib_sendyubn = 21, cb_sendyubn = config.constst[1]; // ご依頼主郵便番号
-  var ib_sendaddr = 22, cb_sendaddr = config.constst[2]; // ご依頼主住所
-  var ib_sendname = 24, cb_sendname = config.constst[3]; // ご依頼主名
-  var ib_clntcode = 39, cb_clntcode = config.constst[4]; // 請求先顧客コード
-  var ib_chargnum = 41, cb_chargnum = config.constst[5]; // 運賃管理番号
-  var ib_itemstat = 98, cb_itemstat = config.constst[6]; // ステータス
-  
-  // 結合値
-  var io_ad1 = 37, io_ad2 = 38, ib_ad1 = 11, ib_ad2 = 12; // お届け先住所 マンション名
-  var io_na1 = 34, io_na2 = 35, ib_nam = 15;              // お届け先名
+  var ib_sendphon = config.ib_sendphon, cb_sendphon = config.constst[0]; // ご依頼主電話番号
+  var ib_sendyubn = config.ib_sendyubn, cb_sendyubn = config.constst[1]; // ご依頼主郵便番号
+  var ib_sendaddr = config.ib_sendaddr, cb_sendaddr = config.constst[2]; // ご依頼主住所
+  var ib_sendname = config.ib_sendname, cb_sendname = config.constst[3]; // ご依頼主名
+  var ib_clntcode = config.ib_clntcode, cb_clntcode = config.constst[4]; // 請求先顧客コード
+  var ib_chargnum = config.ib_chargnum, cb_chargnum = config.constst[5]; // 運賃管理番号
+  var ib_itemstat = config.ib_itemstat, cb_itemstat = config.constst[6]; // ステータス
+
+  // order→B2で結合するものの列インデックスを指定
+  var io_ad1 = config.io_ad1, io_ad2 = config.io_ad2; // order, 都道府県 住所
+  var ib_ad1 = config.ib_ad1, ib_ad2 = config.ib_ad2; // B2, お届け先住所 アパートマンション名
+  var io_na1 = config.io_na1, io_na2 = config.io_na2; // order, 氏 名
+  var ib_nam = config.ib_nam;                         // B2, お届け先名
 
   for (i=0 ;i<arrOrder.length; i++) {
     // console.log(i, arrB2[0,0], arrOrder[0][0]);
@@ -345,7 +349,7 @@ function modifySenderYamato(arrYamat, arrOrder, config) {
     })
   })
 
-  // 該当行を取得し配列化（オーダー番号ごとに1行だけ取得している） 
+  // オーダー情報から該当行を取得し配列化（オーダー番号ごとに1行だけ取得している） 
   setPickOrders.forEach( lineNo => {
     arrPick.push(arrOrder[lineNo]);
   })
@@ -353,11 +357,18 @@ function modifySenderYamato(arrYamat, arrOrder, config) {
   // 該当行配列から、次に使う書き換え用の配列を生成
   // [ オーダー番号, ご依頼主電話番号, ご依頼主郵便番号, ご依頼主住所,
   //   ご依頼主アパートマンション, ご依頼主名 ]
-  // HACK: ここは手抜きだがハードコーディング
-  // NOTE: configに書き出してもあとで余計に混乱する気が
+  // NOTE: ハードコーディングをやめてconfigにした at 2021-12-11
   arrPick.forEach( line => {
-    arrModYamato.push( [line[0], line[47], line[44], line[45]+line[46],
-    '', line[42] + ' ' + line[43]]);
+    arrModYamato.push( [
+      line[config.ro_ordernum],     // order-オーダー番号
+      line[config.ro_prchphon],     // order-電話番号(購入者)
+      line[config.ro_prchyubn],     // order-郵便番号(購入者)
+      line[config.ro_prchprfc]
+       + line[config.ro_prchaddr],  // order-都道府県(購入者) + 住所(購入者)
+      '',                           // いつも''
+      line[config.ro_prchfnam] + ' '
+       + line[config.ro_prchlnam]   // order-氏(購入者) + 名(購入者) 
+      ] );
   })
 
   // 取得したオーダー番号をキーにして、ヤマトB2の依頼主情報を書き換える
@@ -369,13 +380,12 @@ function modifySenderYamato(arrYamat, arrOrder, config) {
     // 行の特定
     let lineno = arrYamatOrder.indexOf(row[0]);
     // 書き換え
-    // HACK: ここは手抜きだがハードコーディング
-    // NOTE: configに書き出してもあとで余計に混乱する気が
-    arrYamat[lineno][19] = row[1]; // ご依頼主電話番号
-    arrYamat[lineno][21] = row[2]; // ご依頼主郵便番号
-    arrYamat[lineno][22] = row[3]; // ご依頼主住所
-    arrYamat[lineno][23] = row[4]; // ご依頼主アパートマンション（いつも''）
-    arrYamat[lineno][24] = row[5]; // ご依頼主名
+    // NOTE: ハードコーディングをやめてconfigにした at 2021-12-11
+    arrYamat[lineno][config.ib_sendphon] = row[1]; // B2-ご依頼主電話番号
+    arrYamat[lineno][config.ib_sendyubn] = row[2]; // B2-ご依頼主郵便番号
+    arrYamat[lineno][config.ib_sendaddr] = row[3]; // B2-ご依頼主住所
+    arrYamat[lineno][config.ib_sendaprt] = row[4]; // B2-ご依頼主アパートマンション（いつも''）
+    arrYamat[lineno][config.ib_sendname] = row[5]; // B2-ご依頼主名
   })
 
   return arrYamat
@@ -676,10 +686,10 @@ function deleteOverlapOrderNum(array, row) {
  */
 function testtool() {
   // シートAとシートBを比較
-  isEquivalentSht('20210607_yamato_cp', '0607_yamato_cp_t');
-  isEquivalentSht('20210607_order_ck',  '0607_order_ck_t');
-  isEquivalentSht('20210614_yamato_cp', '0614_yamato_cp_t');
-  isEquivalentSht('20210614_order_ck',  '0614_order_ck_t');
+  isEquivalentSht('20211210_yamato_cp', '1210_yamato_cp_t');
+  isEquivalentSht('20211210_order_ck',  '1210_order_ck_t');
+  // isEquivalentSht('20210614_yamato_cp', '0614_yamato_cp_t');
+  // isEquivalentSht('20210614_order_ck',  '0614_order_ck_t');
 }
 
 /**
@@ -699,6 +709,3 @@ function isEquivalentSht(shtNameA, shtNameB) {
   console.log('Comparing', shtNameA, 'to', shtNameB, ': ', JSON.stringify(arrA) === JSON.stringify(arrB));
 
 }
-
-
-
