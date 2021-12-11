@@ -108,7 +108,7 @@ function initConfig(shtName, config) {
   config.untiume = config.untiume.split(","); // like 'true,'true,'01',41'
   config.odckolf = config.odckolf.split(","); // like '33,34,35,36,37,38'
   config.odckolt = config.odckolt.split(","); // like '39,40,41,42,43,44'
-  config.odckrow = config.odckrow.split(","); // like '0,8,12,13,33,34,35,36,37,38,46,47,39,40,41,42,43,44'
+  config.odckcol = config.odckcol.split(","); // like '0,8,12,13,33,34,35,36,37,38,46,47,39,40,41,42,43,44'
   config.odsndto = config.odsndto.split(","); // like '33,34,35,36,37,38'
   config.odsndfr = config.odsndfr.split(","); // like '39,40,41,42,43,44'
   config.umehncs = config.umehncs.split(","); // like '19,090791488750'
@@ -258,12 +258,12 @@ function mapOrderToB2(arrOrder, config) {
 
   // インデックス設定：1to1マッピング　※列数から1マイナスのこと
   var io_ordernum = 0,  ib_ordernum = 0;  // オーダー番号
-  var io_phonenum = 38, ib_phonenum = 8;  // お届け先電話番号
-  var io_yubinnum = 35, ib_yubinnum = 10; // お届け先郵便番号
+  var io_phonenum = 39, ib_phonenum = 8;  // お届け先電話番号
+  var io_yubinnum = 36, ib_yubinnum = 10; // お届け先郵便番号
   var io_senditem = 8,  ib_senditem = 27; // 品名１
-  var io_emailadd = 47, ib_emailadd = 48; // お届け予定ｅメール
-  var io_comments = 49, ib_comments = 95; // 備考欄
-  var io_memomemo = 50, ib_memomemo = 96; // メモ
+  var io_emailadd = 48, ib_emailadd = 48; // お届け予定ｅメール
+  var io_comments = 50, ib_comments = 95; // 備考欄
+  var io_memomemo = 51, ib_memomemo = 96; // メモ
   var io_wpayment = 2,  ib_wpayment = 97; // 支払い方法
   
   // B2形式の特定列を固定値で埋める
@@ -276,8 +276,8 @@ function mapOrderToB2(arrOrder, config) {
   var ib_itemstat = 98, cb_itemstat = config.constst[6]; // ステータス
   
   // 結合値
-  var io_ad1 = 36, io_ad2 = 37, ib_ad1 = 11, ib_ad2 = 12; // お届け先住所 マンション名
-  var io_na1 = 33, io_na2 = 34, ib_nam = 15;              // お届け先名
+  var io_ad1 = 37, io_ad2 = 38, ib_ad1 = 11, ib_ad2 = 12; // お届け先住所 マンション名
+  var io_na1 = 34, io_na2 = 35, ib_nam = 15;              // お届け先名
 
   for (i=0 ;i<arrOrder.length; i++) {
     // console.log(i, arrB2[0,0], arrOrder[0][0]);
@@ -356,8 +356,8 @@ function modifySenderYamato(arrYamat, arrOrder, config) {
   // HACK: ここは手抜きだがハードコーディング
   // NOTE: configに書き出してもあとで余計に混乱する気が
   arrPick.forEach( line => {
-    arrModYamato.push( [line[0], line[46], line[43], line[44]+line[45],
-    '', line[41] + ' ' + line[42]]);
+    arrModYamato.push( [line[0], line[47], line[44], line[45]+line[46],
+    '', line[42] + ' ' + line[43]]);
   })
 
   // 取得したオーダー番号をキーにして、ヤマトB2の依頼主情報を書き換える
@@ -598,8 +598,8 @@ function formatOrder4Check(arrOD, config) {
   // 重複列を削除
   deleteOverlap(arrOD, config.odckolf, config.odckolt);
 
-  // 必要列に集約　// NOTE: RowsじゃなくてColumnsだ……
-  var arrODC = clipRowsforCheck(arrOD, config.odckrow);
+  // 必要列に集約　// NOTE: RowsじゃなくてColumnsだ…… fixed at 2021-12-11
+  var arrODC = clipRowsforCheck(arrOD, config.odckcol);
 
   // オーダー番号をuniqueにする HACK: 0は直打ち
   deleteOverlapOrderNum(arrODC, 0);
@@ -629,20 +629,20 @@ function deleteOverlap(arr, idxfm, idxto) {
 }
 
 /**
- * チェックシートに必要な行を抽出します // NOTE: RowsじゃなくてColumnsだ……
+ * チェックシートに必要な行を抽出します // NOTE: RowsじゃなくてColumnsだ…… fix at 2021-12-11
  * @param {Array} array     操作対象の2次元配列
- * @param {string} rowsClip 抽出する列 like [ '0', '8', '12', '13', '25' ]
+ * @param {string} colsClip 抽出する列 like [ '0', '8', '12', '13', '25' ]
  * @return {Array}          抽出後の2次元配列
  */
-function clipRowsforCheck(array, rowsClip) {
-  // console.log(rowsClip);
+function clipRowsforCheck(array, colsClip) {
+  // console.log(colsClip);
   // 行列入れ替え
   const transpose = a => a[0].map((_, c) => a.map(r => r[c]));
   var arrayT = transpose(array);
 
   // 抽出
   var arrayCT = [];
-  rowsClip.forEach( val => arrayCT.push(arrayT[val]) );
+  colsClip.forEach( val => arrayCT.push(arrayT[val]) );
 
   // 行列を入れ替えてリターン
   return transpose(arrayCT);
@@ -699,3 +699,6 @@ function isEquivalentSht(shtNameA, shtNameB) {
   console.log('Comparing', shtNameA, 'to', shtNameB, ': ', JSON.stringify(arrA) === JSON.stringify(arrB));
 
 }
+
+
+
