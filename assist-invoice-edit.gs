@@ -609,7 +609,9 @@ function formatOrder4Check(arrOD, config) {
   deleteOverlap(arrOD, config.odckolf, config.odckolt);
 
   // 必要列に集約　// NOTE: RowsじゃなくてColumnsだ…… fixed at 2021-12-11
-  var arrODC = clipRowsforCheck(arrOD, config.odckcol);
+  //             // NOTE: 関数名もColumnsに fix at 2023-02-03
+
+  var arrODC = clipColsforCheck(arrOD, config.odckcol);
 
   // オーダー番号をuniqueにする HACK: 0は直打ち
   deleteOverlapOrderNum(arrODC, 0);
@@ -640,11 +642,12 @@ function deleteOverlap(arr, idxfm, idxto) {
 
 /**
  * チェックシートに必要な行を抽出します // NOTE: RowsじゃなくてColumnsだ…… fix at 2021-12-11
+ *                                // NOTE: 関数名もColumnsに fix at 2023-02-03
  * @param {Array} array     操作対象の2次元配列
  * @param {string} colsClip 抽出する列 like [ '0', '8', '12', '13', '25' ]
  * @return {Array}          抽出後の2次元配列
  */
-function clipRowsforCheck(array, colsClip) {
+function clipColsforCheck(array, colsClip) {
   // console.log(colsClip);
   // 行列入れ替え
   const transpose = a => a[0].map((_, c) => a.map(r => r[c]));
@@ -688,6 +691,8 @@ function testtool() {
   // シートAとシートBを比較
   isEquivalentSht('20211210_yamato_cp', '1210_yamato_cp_t');
   isEquivalentSht('20211210_order_ck',  '1210_order_ck_t');
+  // isEquivalentSht('20211210_yamato_cp', '1210_yamato_cp_t');
+  // isEquivalentSht('20211210_order_ck',  '1210_order_ck_t');
   // isEquivalentSht('20210614_yamato_cp', '0614_yamato_cp_t');
   // isEquivalentSht('20210614_order_ck',  '0614_order_ck_t');
 }
