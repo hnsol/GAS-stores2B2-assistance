@@ -99,13 +99,17 @@ function initConfig(shtName, config) {
   config = convertSht2Obj(shtConfig);
 
   // HACK:カンマで分割して配列化→ここは手打ち、一般化するいい方法を思い付いていない
-  config.samaume = config.samaume.split(","); // like 'true,'様',17'
-  config.bancume = config.bancume.split(","); // like 'true,'京都府...町99-99',22'
-  config.kanaume = config.kanaume.split(","); // like 'true,'ﾄﾅﾘﾉﾄﾄﾛ',23'
-  config.wareume = config.wareume.split(","); // like 'true,'ワレモノ注意',30'
-  config.tentume = config.tentume.split(","); // like 'true,'天地無用',31'
-  config.seikume = config.seikume.split(","); // like 'true,'09099999999',39'
-  config.untiume = config.untiume.split(","); // like 'true,'true,'01',41'
+  config.samaume = config.samaume.split(","); // like 'true, 様, 17'
+  config.bancume = config.bancume.split(","); // like 'true, 京都府...町99-99, 22'
+  config.kanaume = config.kanaume.split(","); // like 'true, ﾄﾅﾘﾉﾄﾄﾛ, 23'
+  config.wareume = config.wareume.split(","); // like 'true, ワレモノ注意, 30'
+  config.tentume = config.tentume.split(","); // like 'true, 天地無用, 31'
+  config.seikume = config.seikume.split(","); // like 'true, 09099999999, 39'
+  config.untiume = config.untiume.split(","); // like 'true, 01, 41'
+  config.emrkume = config.emrkume.split(","); // like 'true, 1, 47'
+  config.emnkume = config.emnkume.split(","); // like 'true, 1, 49'
+  config.emmsume = config.emmsume.split(","); // like 'true, この度は当店の..., 50'
+
   config.odckolf = config.odckolf.split(","); // like '33,34,35,36,37,38'
   config.odckolt = config.odckolt.split(","); // like '39,40,41,42,43,44'
   config.odckcol = config.odckcol.split(","); // like '0,8,12,13,33,34,35,36,37,38,46,47,39,40,41,42,43,44'
@@ -497,6 +501,9 @@ function xxxUme(arrWPUB2C, config) {
   fillConstValue(arrWPUB2C, config.tentume); // 天地無用埋め
   fillConstValue(arrWPUB2C, config.seikume); // 請求先顧客コード埋め
   fillConstValue(arrWPUB2C, config.untiume); // 運賃管理番号埋め
+  fillConstValue(arrWPUB2C, config.emrkume); // eメール利用区分埋め
+  fillConstValue(arrWPUB2C, config.emnkume); // 入力機種埋め
+  fillConstValue(arrWPUB2C, config.emmsume); // ｅメールメッセ埋め
 
   // 単純な埋めではないケース（条件分岐があるため）
   fillSendrValue(arrWPUB2C, config.bancume, config.umehncs);  // 住所番地埋め
