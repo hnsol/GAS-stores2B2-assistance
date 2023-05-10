@@ -630,20 +630,26 @@ function formatOrder4Check(arrOD, config) {
 }
 
 /**
- * 2次元配列の、指定列F,Tでの重複があればT列を削除します
+ * 2次元配列の、指定列F,Tがすべて重複している場合、T列を削除します
  * @param {Array}  arr   操作対象の2次元配列
- * @param {string} idxfm 重複チェックの指定列
- * @param {string} idxto 重複チェックの指定列、この列を削除
+ * @param {Array}  idxfm 重複チェックの指定列
+ * @param {Array}  idxto 重複チェックの指定列、この列を削除
  * @return {Array} arr   書き換え後の2次元配列
  */
 function deleteOverlap(arr, idxfm, idxto) {
+  if(idxfm.length !== idxto.length) {
+    SpreadsheetApp.getUi().alert("Error: idxfm and idxto must be the same length. 出力結果を利用しないでください");
+    return arr;
+  }
 
   arr.forEach( line => {
-    idxfm.forEach( (val, idx) => {
-      if (line[val] == line[idxto[idx]]) line[idxto[idx]] = "";
-    })
-  })
-
+    let identical = idxfm.every((val, idx) => line[val] == line[idxto[idx]]);
+    if(identical) {
+      idxto.forEach((val, idx) => {
+        line[val] = "";
+      });
+    }
+  });
   return arr;
 }
 
@@ -696,8 +702,8 @@ function deleteOverlapOrderNum(array, row) {
  */
 function testtool() {
   // シートAとシートBを比較
-  isEquivalentSht('20211210_yamato_cp', '1210_yamato_cp_t');
-  isEquivalentSht('20211210_order_ck',  '1210_order_ck_t');
+  isEquivalentSht('20230505_yamato_cp', '20230505_yamato_cp_bug');
+  isEquivalentSht('20230505_order_ck',  '20230505_order_ck_bug');
   // isEquivalentSht('20211210_yamato_cp', '1210_yamato_cp_t');
   // isEquivalentSht('20211210_order_ck',  '1210_order_ck_t');
   // isEquivalentSht('20210614_yamato_cp', '0614_yamato_cp_t');
