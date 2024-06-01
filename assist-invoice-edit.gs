@@ -45,17 +45,27 @@ function generateInvoiceSht() {
   var arrOrder = sht2arr(config.inShtOrder);  // オーダー情報
   var arrYamat = sht2arr(config.inShtYamat);  // ヤマト用出力
 
+  // NOTE: 入金待ちデータがなくなったので、入金待ちデータを抽出する処理をコメントアウト
+
   // オーダー情報から入金待ちの行を抽出
-  var arrWPU = clipWPLine(arrOrder, config);
+  // var arrWPU = clipWPLine(arrOrder, config);
 
   // 入金待ちの配列を、オーダー情報形式からヤマトB2形式に変換
-  var arrWPUB2 = mapOrderToB2(arrWPU, config);
+  // var arrWPUB2 = mapOrderToB2(arrWPU, config);
 
   // yamato.csvデータと、入金待ちの配列を結合
-  var arrWPUB2C = concat2DArray(arrYamat, arrWPUB2, 0);
+  // var arrWPUB2C = concat2DArray(arrYamat, arrWPUB2, 0);
 
-  // ※順番変更※追加※オーダー情報のうち、配送先と購入者が異なる場合、ヤマトB2データを修正
+  var arrWPUB2C = arrYamat;
+
+  // オーダー情報のうち、配送先と購入者が異なる場合、ヤマトB2データを修正
   modifySenderYamato(arrWPUB2C, arrOrder, config);
+
+  // アイテム名に個数情報を追加
+  addQuantityToItems(arrWPUB2C, arrOrder, config);
+
+  // 領収書情報を追加、ただし配送先と購入者が異なる場合は追加しない
+  addReceiptNote(arrWPUB2C, arrOrder, config);
 
   // ※追加※結合済み出力前データの整形
   formatYamatB2(arrWPUB2C, config);
@@ -118,6 +128,12 @@ function initConfig(shtName, config) {
   config.umehncs = config.umehncs.split(","); // like '19,090791488750'
   config.constst = config.constst.split(","); // like '090..,60..,京..,御..,09..,01,入金待ち,603.'
 
+  // 追加: アイテム名と個数の列インデックス設定
+  // NOTE: あとで変数化する！まずは動作確認
+  config.itemNameCol = 8; // I列（0始まりのインデックスで8）
+  config.quantityCol = 12; // M列（0始まりのインデックスで12）
+  config.yamatItemCol = 27; // AB列（0始まりのインデックスで27）
+
   return config;
 }
 
@@ -154,6 +170,85 @@ function sht2arr(shtName) {
   }
     
   return arr;
+}
+
+/**
+ * アイテム名に個数情報を追加します
+ * @param {Array} arrYamat ヤマト用出力配列
+ * @param {Array} arrOrder オーダー情報配列
+ * @param {Object} config 設定値オブジェクト
+ */
+function addQuantityToItems(arrYamat, arrOrder, config) {
+  // オーダー情報の列インデックス
+  const orderNumberCol = config.io_ordernum; // オーダー番号, 0
+  const itemNameCol    = config.io_senditem; // 品名1, 8
+  const quantityCol    = config.io_quantity; // 個数, 12
+
+  // ヤマト用出力の列インデックス
+  const yamatOrderNumberCol = config.ib_ordernum; // オーダー番号, 0
+  const yamatItemCol        = config.ib_senditem; // 品名１, 27
+
+  // マッピング用オブジェクトを作成
+  let itemQuantityMap = {};
+  arrOrder.forEach(row => {
+    const orderNumber = row[orderNumberCol];
+    const itemName = row[itemNameCol];
+    const quantity = row[quantityCol];
+    if (orderNumber && itemName && quantity) {
+      const combined = itemName + quantity;
+      if (!itemQuantityMap[orderNumber]) {
+        itemQuantityMap[orderNumber] = [];
+      }
+      itemQuantityMap[orderNumber].push(combined);
+    }
+  });
+
+  // ヤマト用出力のアイテム名に個数情報を追加
+  arrYamat.forEach(row => {
+    const orderNumber = row[yamatOrderNumberCol];
+    if (orderNumber && itemQuantityMap[orderNumber]) {
+      row[yamatItemCol] = itemQuantityMap[orderNumber].join("/");
+    }
+  });
+}
+
+/**
+ * 領収書情報を追加します
+ * @param {Array} arrYamat ヤマト用出力配列
+ * @param {Array} arrOrder オーダー情報配列
+ * @param {Object} config 設定値オブジェクト
+ */
+function addReceiptNote(arrYamat, arrOrder, config) {
+  // オーダー情報の列インデックス
+  const orderNumberCol = config.io_ordernum; // オーダー番号, 0
+  const receiptNoteCol = config.io_receiptn; // 領収書宛名, 49
+
+  // ヤマト用出力の列インデックス
+  const yamatOrderNumberCol = config.ib_ordernum; // オーダー番号, 0
+  const yamatItemCol        = config.ib_senditem; // 品名１, 27
+
+  // 配送先と購入者が異なるかどうかの判断に使う列インデックス
+  const idxto = config.odsndto;
+  const idxfm = config.odsndfr;
+
+  // 購入者と配送先が異なるオーダー番号を記録
+  let differentAddressOrders = new Set();
+  arrOrder.forEach((line, lineNo) => {
+    idxto.forEach((toIndex, index) => {
+      if (line[toIndex] !== line[idxfm[index]]) {
+        differentAddressOrders.add(line[orderNumberCol]);
+      }
+    });
+  });
+
+  // 領収書情報を追加
+  arrYamat.forEach(row => {
+    const orderNumber = row[yamatOrderNumberCol];
+    const orderRow = arrOrder.find(order => order[orderNumberCol] === orderNumber);
+    if (orderRow && orderRow[receiptNoteCol] && !differentAddressOrders.has(orderNumber)) {
+      row[yamatItemCol] = row[yamatItemCol] + "/領収書";
+    }
+  });
 }
 
 
