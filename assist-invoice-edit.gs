@@ -67,6 +67,9 @@ function generateInvoiceSht() {
   // 領収書情報を追加、ただし配送先と購入者が異なる場合は追加しない
   addReceiptNote(arrWPUB2C, arrOrder, config);
 
+  // 品名1 (AB列) から日付情報を抽出し、E列の出荷予定日とF列のお届け予定日を書き換える
+  updateShipmentAndDeliveryDates(arrWPUB2C, config);
+
   // ※追加※結合済み出力前データの整形
   formatYamatB2(arrWPUB2C, config);
 
@@ -129,10 +132,12 @@ function initConfig(shtName, config) {
   config.constst = config.constst.split(","); // like '090..,60..,京..,御..,09..,01,入金待ち,603.'
 
   // 追加: アイテム名と個数の列インデックス設定
-  // NOTE: あとで変数化する！まずは動作確認
-  config.itemNameCol = 8; // I列（0始まりのインデックスで8）
-  config.quantityCol = 12; // M列（0始まりのインデックスで12）
-  config.yamatItemCol = 27; // AB列（0始まりのインデックスで27）
+  // NOTE: 変数化（スプレッドシート化）完了している。念のため残している (2024-07-04 16:24)
+  // config.itemNameCol = 8; // I列（0始まりのインデックスで8）
+  // config.quantityCol = 12; // M列（0始まりのインデックスで12）
+  // config.yamatItemCol = 27; // AB列（0始まりのインデックスで27） → ib_senditem
+  // config.shipmentDateCol = 4; // E列（0始まりのインデックスで4） → ib_shipdate
+  // config.deliveryDateCol = 5; // F列（0始まりのインデックスで5） → ib_dlvrdate
 
   return config;
 }
@@ -516,6 +521,71 @@ function concat2DArray(arr1, arr2, axis) {
   }
   return arr3;
 }
+
+/**
+ * 品名1 (AB列) から日付情報を抽出し、E列の出荷予定日とF列のお届け予定日を書き換えます
+ * @param {Array} arrWPUB2C ヤマト用出力配列
+ * @param {Object} config 設定値オブジェクト
+ */
+function updateShipmentAndDeliveryDates(arrWPUB2C, config) {
+  arrWPUB2C.forEach(row => {
+    // var itemName = row[config.yamatItemCol]; // AB列の品名1
+    var itemName = row[config.ib_senditem]; // AB列の品名1
+    var extractedDate = extractDateFromItemName(itemName);
+    if (extractedDate) {
+      // 日付形式を変換（例：5/10(金) -> YYYY/MM/DD）
+      var formattedDate = formatDateString(extractedDate);
+      row[config.ib_shipdate] = formattedDate; // E列の出荷予定日を書き換え
+
+      // お届け予定日を計算（出荷予定日＋1日）
+      var deliveryDate = addOneDay(formattedDate);
+      row[config.ib_dlvrdate] = deliveryDate; // F列のお届け予定日を書き換え
+    }
+  });
+}
+
+/**
+ * 品名1 (AB列) から日付情報を抽出します
+ * @param {string} itemName 品名1の文字列
+ * @return {string} 抽出された日付情報
+ */
+function extractDateFromItemName(itemName) {
+  var datePattern = /\d{1,2}\/\d{1,2}\([^)]+\)発送/;
+  var match = itemName.match(datePattern);
+  return match ? match[0] : ''; // マッチする場合は日付を返し、マッチしない場合は空文字を返す
+}
+
+/**
+ * 抽出された日付情報を YYYY/MM/DD 形式に変換します
+ * @param {string} dateStr 抽出された日付情報（例：5/10(金)発送）
+ * @return {string} YYYY/MM/DD 形式の日付文字列
+ */
+function formatDateString(dateStr) {
+  var datePattern = /(\d{1,2})\/(\d{1,2})/;
+  var match = dateStr.match(datePattern);
+  if (match) {
+    var year = new Date().getFullYear(); // 現在の年を取得
+    var month = match[1].padStart(2, '0'); // 月を2桁にする
+    var day = match[2].padStart(2, '0'); // 日を2桁にする
+    return `${year}/${month}/${day}`;
+  }
+  return '';
+}
+
+/**
+ * YYYY/MM/DD 形式の日付文字列に1日を加えます
+ * @param {string} dateStr YYYY/MM/DD 形式の日付文字列
+ * @return {string} YYYY/MM/DD 形式の日付文字列（+1日）
+ */
+function addOneDay(dateStr) {
+  var date = new Date(dateStr);
+  date.setDate(date.getDate() + 1);
+  var year = date.getFullYear();
+  var month = String(date.getMonth() + 1).padStart(2, '0');
+  var day = String(date.getDate()).padStart(2, '0');
+  return `${year}/${month}/${day}`;
+}
+
 
 /**
  * 配列をいい感じに整形します
