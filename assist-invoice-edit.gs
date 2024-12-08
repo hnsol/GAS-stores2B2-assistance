@@ -747,11 +747,16 @@ function outputArray2Sht(array, shtName) {
   var outSht = smartInsSheet(shtName);
 
   // シートをクリアして、配列を書き込む（すべて文字列とする）
-  outSht.clearContents();
-  outSht
-    .getRange(1, 1, array.length, array[0].length)
-    .setNumberFormat('@')
-    .setValues(array);
+  tryWithRetry(() => {
+    outSht.clearContents(); // 内容をクリア
+  }, 3, 1000); // 最大3回リトライ、各リトライ間に1秒の待機
+
+  tryWithRetry(() => {
+    outSht
+      .getRange(1, 1, array.length, array[0].length)
+      .setNumberFormat('@')
+      .setValues(array);
+  }, 3, 1000); // 最大3回リトライ、各リトライ間に1秒の待機
 }
   
 /**
@@ -763,12 +768,47 @@ function smartInsSheet(shtName) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
 
   // コピー先のシートがすでに存在する場合は、削除する
-  var prevSht = ss.getSheetByName(shtName);
-  if (prevSht !== null) ss.deleteSheet(prevSht);
+  // var prevSht = ss.getSheetByName(shtName);
+  // if (prevSht !== null) ss.deleteSheet(prevSht);
 
-  ss.insertSheet(shtName, ss.getNumSheets());
+  // ss.insertSheet(shtName, ss.getNumSheets());
 
-  return ss.getSheetByName(shtName);
+  // return ss.getSheetByName(shtName);
+
+  // シート削除処理の負荷が高い可能性があり、クリア処理に変更
+  let sheet = ss.getSheetByName(shtName);
+  if (!sheet) {
+    sheet = ss.insertSheet(shtName);
+  } else {
+    sheet.clear(); // 内容をクリア
+    SpreadsheetApp.flush(); // 変更を即座に反映
+  }
+  return sheet;
+
+}
+
+/**
+ * リトライ処理関数。 * 指定されたアクションを実行し、失敗した場合に指定回数まで再試行します。
+ * @param {Function} action      実行する処理を記述した関数
+ * @param {number} maxRetries    最大リトライ回数
+ * @param {number} waitTimeMs    各リトライ間の待機時間（ミリ秒）
+ * @return {void}                実行成功時は何も返さない。失敗時は例外をスロー。
+ * @throws {Error}               最大リトライ回数を超えた場合に例外をスロー。
+ */
+function tryWithRetry(action, maxRetries, waitTimeMs) {
+  let attempt = 0;
+  while (attempt < maxRetries) {
+    try {
+      action(); // 実行
+      return; // 成功したら終了
+    } catch (e) {
+      attempt++;
+      if (attempt >= maxRetries) {
+        throw new Error(`Action failed after ${maxRetries} retries: ${e.message}`);
+      }
+      Utilities.sleep(waitTimeMs); // 待機
+    }
+  }
 }
 
 
@@ -867,8 +907,10 @@ function deleteOverlapOrderNum(array, row) {
  */
 function testtool() {
   // シートAとシートBを比較
-  isEquivalentSht('20230505_yamato_cp', '20230505_yamato_cp_bug');
-  isEquivalentSht('20230505_order_ck',  '20230505_order_ck_bug');
+  isEquivalentSht('20241206_yamato_cp', '20241206_yamato_cp_true');
+  isEquivalentSht('20241206_order_ck',  '20241206_order_ck_true');
+  // isEquivalentSht('20230505_yamato_cp', '20230505_yamato_cp_bug');
+  // isEquivalentSht('20230505_order_ck',  '20230505_order_ck_bug');
   // isEquivalentSht('20211210_yamato_cp', '1210_yamato_cp_t');
   // isEquivalentSht('20211210_order_ck',  '1210_order_ck_t');
   // isEquivalentSht('20210614_yamato_cp', '0614_yamato_cp_t');
