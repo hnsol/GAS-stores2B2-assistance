@@ -778,7 +778,7 @@ function smartInsSheet(shtName) {
   // シート削除処理の負荷が高い可能性があり、クリア処理に変更
   let sheet = ss.getSheetByName(shtName);
   if (!sheet) {
-    sheet = ss.insertSheet(shtName);
+    sheet = ss.insertSheet(shtName, ss.getNumSheets());
   } else {
     sheet.clear(); // 内容をクリア
     SpreadsheetApp.flush(); // 変更を即座に反映
