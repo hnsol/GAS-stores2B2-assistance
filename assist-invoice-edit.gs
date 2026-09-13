@@ -43,7 +43,9 @@ function generateInvoiceSht() {
 
   // シートから配列を取り出す
   var arrOrder = sht2arr(config.inShtOrder);  // オーダー情報
+  assertHasDataRows(arrOrder, config.inShtOrder);
   var arrYamat = sht2arr(config.inShtYamat);  // ヤマト用出力
+  assertHasDataRows(arrYamat, config.inShtYamat);
 
   // NOTE: 入金待ちデータがなくなったので、入金待ちデータを抽出する処理をコメントアウト
 
@@ -90,6 +92,7 @@ function generateOrderCkSht() {
 
   // シートから配列を取り出す
   var arrOD = sht2arr(config.inShtOrder);
+  assertHasDataRows(arrOD, config.inShtOrder);
 
   // 配列をチェックシート用に加工
   var arrODC = formatOrder4Check(arrOD, config);
@@ -175,6 +178,20 @@ function sht2arr(shtName) {
   }
     
   return arr;
+}
+
+/**
+ * 配列にデータ行（ヘッダ以外の行）が存在することを確認します
+ * データ行がない場合はアラートを出したうえで例外を投げ、処理を止めます
+ * @param {Array} arr      チェック対象の2次元配列
+ * @param {string} shtName シートの名前（アラート表示用）
+ */
+function assertHasDataRows(arr, shtName) {
+  if (!Array.isArray(arr) || arr.length < 2) {
+    const ui = SpreadsheetApp.getUi();
+    ui.alert('処理を停止します', 'シート「' + shtName + '」にデータ行がありません（ヘッダのみ）。', ui.ButtonSet.OK);
+    throw new Error('データ行がありません: ' + shtName);
+  }
 }
 
 /**
@@ -480,9 +497,15 @@ function modifySenderYamato(arrYamat, arrOrder, config) {
   const arrYamatOrder = transpose(arrYamat)[0]; // オーダー番号だけ並べた1次元配列
 
   // arrYamatのオーダー情報が一致する行を特定し、書き換え
+  var skippedOrderNums = []; // ヤマトシートに見つからなかった注文番号
   arrModYamato.forEach( row => {
     // 行の特定
     let lineno = arrYamatOrder.indexOf(row[0]);
+    if (lineno === -1) {
+      // ヤマトシートに該当行が見つからない場合、書き換えをスキップする
+      skippedOrderNums.push(row[0]);
+      return;
+    }
     // 書き換え
     // NOTE: ハードコーディングをやめてconfigにした at 2021-12-11
     arrYamat[lineno][config.ib_sendphon] = row[1]; // B2-ご依頼主電話番号
@@ -491,6 +514,15 @@ function modifySenderYamato(arrYamat, arrOrder, config) {
     arrYamat[lineno][config.ib_sendaprt] = row[4]; // B2-ご依頼主アパートマンション（いつも''）
     arrYamat[lineno][config.ib_sendname] = row[5]; // B2-ご依頼主名
   })
+
+  if (skippedOrderNums.length > 0) {
+    const ui = SpreadsheetApp.getUi();
+    ui.alert(
+      '注意',
+      '配送先≠購入者の注文のうち、ヤマトシートに見つからなかった注文番号が ' + skippedOrderNums.length + ' 件あります（依頼主の書き換えをスキップしました）:\n' + skippedOrderNums.join(', '),
+      ui.ButtonSet.OK
+      );
+  }
 
   return arrYamat
 }
@@ -749,14 +781,14 @@ function outputArray2Sht(array, shtName) {
   // シートをクリアして、配列を書き込む（すべて文字列とする）
   tryWithRetry(() => {
     outSht.clearContents(); // 内容をクリア
-  }, 3, 1000); // 最大3回リトライ、各リトライ間に1秒の待機
+  }, 5, 1000); // 最大5回リトライ、待機は1,2,4,8秒
 
   tryWithRetry(() => {
     outSht
       .getRange(1, 1, array.length, array[0].length)
       .setNumberFormat('@')
       .setValues(array);
-  }, 3, 1000); // 最大3回リトライ、各リトライ間に1秒の待機
+  }, 5, 1000); // 最大5回リトライ、待機は1,2,4,8秒
 }
   
 /**
@@ -779,6 +811,8 @@ function smartInsSheet(shtName) {
   let sheet = ss.getSheetByName(shtName);
   if (!sheet) {
     sheet = ss.insertSheet(shtName, ss.getNumSheets());
+    // 新規作成直後の clearContents がタイムアウトする事象への対策（2026-09）
+    SpreadsheetApp.flush();
   } else {
     sheet.clear(); // 内容をクリア
     SpreadsheetApp.flush(); // 変更を即座に反映
@@ -806,7 +840,7 @@ function tryWithRetry(action, maxRetries, waitTimeMs) {
       if (attempt >= maxRetries) {
         throw new Error(`Action failed after ${maxRetries} retries: ${e.message}`);
       }
-      Utilities.sleep(waitTimeMs); // 待機
+      Utilities.sleep(waitTimeMs * Math.pow(2, attempt - 1)); // 指数バックオフで待機
     }
   }
 }
