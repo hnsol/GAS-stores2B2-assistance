@@ -44,8 +44,10 @@ function generateInvoiceSht() {
   // シートから配列を取り出す
   var arrOrder = sht2arr(config.inShtOrder);  // オーダー情報
   assertHasDataRows(arrOrder, config.inShtOrder);
+  assertOrderNumIsText(arrOrder, config.inShtOrder);
   var arrYamat = sht2arr(config.inShtYamat);  // ヤマト用出力
   assertHasDataRows(arrYamat, config.inShtYamat);
+  assertOrderNumIsText(arrYamat, config.inShtYamat);
 
   // NOTE: 入金待ちデータがなくなったので、入金待ちデータを抽出する処理をコメントアウト
 
@@ -93,6 +95,7 @@ function generateOrderCkSht() {
   // シートから配列を取り出す
   var arrOD = sht2arr(config.inShtOrder);
   assertHasDataRows(arrOD, config.inShtOrder);
+  assertOrderNumIsText(arrOD, config.inShtOrder);
 
   // 配列をチェックシート用に加工
   var arrODC = formatOrder4Check(arrOD, config);
@@ -191,6 +194,27 @@ function assertHasDataRows(arr, shtName) {
     const ui = SpreadsheetApp.getUi();
     ui.alert('処理を停止します', 'シート「' + shtName + '」にデータ行がありません（ヘッダのみ）。', ui.ButtonSet.OK);
     throw new Error('データ行がありません: ' + shtName);
+  }
+}
+
+/**
+ * 注文番号の列が文字列として取り込まれていることを確認します
+ * CSVを「テキストを数値に変換」して取り込むと、注文番号や電話番号・郵便番号の先頭0が消え、
+ * 照合の失敗や誤った伝票データにつながるため、数値が混じっていたら処理を止めます（2026-10）
+ * @param {Array} arr      チェック対象の2次元配列（1行目はヘッダ）
+ * @param {string} shtName シートの名前（アラート表示用）
+ */
+function assertOrderNumIsText(arr, shtName) {
+  const hasNumber = arr.slice(1).some(line => typeof line[0] === 'number');
+  if (hasNumber) {
+    const ui = SpreadsheetApp.getUi();
+    ui.alert(
+      '処理を停止します',
+      'シート「' + shtName + '」の注文番号が数値として取り込まれています。\n'
+       + 'CSVをインポートし直してください。その際「テキストを数値、日付、数式に変換」のチェックを外してください。',
+      ui.ButtonSet.OK
+      );
+    throw new Error('注文番号が数値として取り込まれています: ' + shtName);
   }
 }
 
