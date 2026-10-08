@@ -810,13 +810,23 @@ function smartInsSheet(shtName) {
   // シート削除処理の負荷が高い可能性があり、クリア処理に変更
   let sheet = ss.getSheetByName(shtName);
   if (!sheet) {
-    sheet = ss.insertSheet(shtName, ss.getNumSheets());
-    // 新規作成直後の clearContents がタイムアウトする事象への対策（2026-09）
-    SpreadsheetApp.flush();
-  } else {
+    try {
+      sheet = ss.insertSheet(shtName, ss.getNumSheets());
+      SpreadsheetApp.flush();
+      return sheet;
+    } catch (e) {
+      // 新規作成がタイムアウトしてもシート自体はできていることが多い（2026-10）
+      // 手動で再実行したときと同じく、既存シートの経路で続行する
+      Utilities.sleep(3000);
+      sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(shtName);
+      if (!sheet) throw e;
+    }
+  }
+
+  tryWithRetry(() => {
     sheet.clear(); // 内容をクリア
     SpreadsheetApp.flush(); // 変更を即座に反映
-  }
+  }, 5, 1000); // 最大5回リトライ、待機は1,2,4,8秒
   return sheet;
 
 }
