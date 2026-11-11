@@ -832,7 +832,20 @@ function smartInsSheet(shtName) {
   // return ss.getSheetByName(shtName);
 
   // シート削除処理の負荷が高い可能性があり、クリア処理に変更
-  let sheet = getOrCreateSheetWithRetry(shtName);
+  let sheet = ss.getSheetByName(shtName);
+  if (!sheet) {
+    try {
+      sheet = ss.insertSheet(shtName, ss.getNumSheets());
+      SpreadsheetApp.flush();
+      return sheet;
+    } catch (e) {
+      // 新規作成がタイムアウトしてもシート自体はできていることが多い（2026-10）
+      // 手動で再実行したときと同じく、既存シートの経路で続行する
+      Utilities.sleep(3000);
+      sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(shtName);
+      if (!sheet) throw e;
+    }
+  }
 
   tryWithRetry(() => {
     sheet.clear(); // 内容をクリア
@@ -843,110 +856,21 @@ function smartInsSheet(shtName) {
 }
 
 /**
- * シートを取得、なければ作成します。Google側の詰まりが長引いても、
- * 上限時間（2分半）まで「あるか探す→なければ作る」を繰り返します。
- * @param {string} shtName  対象シートの名前
- * @return {Object}         取得または作成したシートオブジェクト
- * @throws {Error}          上限時間を超えても用意できなかった場合に例外をスロー
- */
-function getOrCreateSheetWithRetry(shtName) {
-  const limitMs = 150000; // 全体の上限：2分半
-  const notifyAfterMs = 30000; // 30秒経過したら通知を出し始める
-  const maxWaitMs = 30000; // 待機時間の上限
-  const start = Date.now();
-  let wait = 3000; // 初回待ち
-  let attempt = 0;
-  let lastError = null;
-  let notified = false;
-
-  while (true) {
-    attempt++;
-    try {
-      // 作成は失敗に見えても実はできていることがある（2026-10）。
-      // そのため毎回「あるか探す→なければ作る」をくり返し、
-      // 作り直しで「同名シートが既にあります」エラーにならないようにする
-      const ss = SpreadsheetApp.getActiveSpreadsheet();
-      let sheet = ss.getSheetByName(shtName);
-      if (!sheet) sheet = ss.insertSheet(shtName, ss.getNumSheets());
-      SpreadsheetApp.flush();
-
-      if (attempt > 1) {
-        console.log(`シート「${shtName}」の用意が${attempt}回目で成功しました`);
-      }
-      if (notified) {
-        showToastSafely('やり直しに成功しました。処理を続けています。', '処理中', 5);
-      }
-      return sheet;
-    } catch (e) {
-      lastError = e;
-      const elapsedSec = Math.round((Date.now() - start) / 1000);
-      console.log(`シート『${shtName}』の用意に失敗（${attempt}回目、${elapsedSec}秒経過）: ${e.message}`);
-    }
-
-    const elapsed = Date.now() - start;
-    if (elapsed + wait > limitMs) break; // 上限時間を超えるなら打ち切る
-
-    if (elapsed >= notifyAfterMs) {
-      const elapsedSec = Math.round(elapsed / 1000);
-      notified = true;
-      showToastSafely(
-        // 通知の枠は小さく、長いと切れる（本文は4行・約45字まで）。回数と時間はタイトルに出す
-        'Google の応答待ちです。このままお待ちください。3分以内に結果をお知らせします。',
-        `やり直し中（${attempt}回目・${elapsedSec}秒）`,
-        60
-      );
-    }
-
-    Utilities.sleep(wait);
-    wait = Math.min(wait * 2, maxWaitMs); // 待機は毎回2倍（上限30秒）
-  }
-
-  // 最終的に用意できなかった場合
-  // 「やり直しています」の通知が残ってポップアップと食い違わないよう、先に置き換える
-  if (notified) showToastSafely('処理を中止しました。', '中止', 5);
-  try {
-    SpreadsheetApp.getUi().alert(
-      '完了できませんでした',
-      `Google の応答が遅く、シート「${shtName}」を用意できませんでした。\n少し時間をおいて、もう一度ボタンを押してください。\n（もう一度押しても、作りかけのシートは上書きされるので大丈夫です）`,
-      SpreadsheetApp.getUi().ButtonSet.OK
-    );
-  } catch (e2) {
-    console.log(`完了できませんでしたの通知表示に失敗: ${e2.message}`);
-  }
-  throw new Error(`シート「${shtName}」を用意できませんでした（${attempt}回試行）: ` + lastError.message);
-}
-
-/**
- * トースト通知を安全に表示します（表示自体が失敗してもthrowしません）
- * @param {string} message    本文
- * @param {string} title      タイトル
- * @param {number} timeoutSec 表示秒数
- * @return {void}
- */
-function showToastSafely(message, title, timeoutSec) {
-  try {
-    SpreadsheetApp.getActiveSpreadsheet().toast(message, title, timeoutSec);
-  } catch (e) {
-    console.log(`トースト通知の表示に失敗: ${e.message}`);
-  }
-}
-
-/**
  * リトライ処理関数。 * 指定されたアクションを実行し、失敗した場合に指定回数まで再試行します。
  * @param {Function} action      実行する処理を記述した関数
  * @param {number} maxRetries    最大リトライ回数
  * @param {number} waitTimeMs    各リトライ間の待機時間（ミリ秒）
- * @return {*}                   実行成功時はactionの戻り値を返す。
+ * @return {void}                実行成功時は何も返さない。失敗時は例外をスロー。
  * @throws {Error}               最大リトライ回数を超えた場合に例外をスロー。
  */
 function tryWithRetry(action, maxRetries, waitTimeMs) {
   let attempt = 0;
   while (attempt < maxRetries) {
     try {
-      return action(); // 実行して、戻り値を返す
+      action(); // 実行
+      return; // 成功したら終了
     } catch (e) {
       attempt++;
-      console.log(`リトライ ${attempt}/${maxRetries}: ${e.message}`);
       if (attempt >= maxRetries) {
         throw new Error(`Action failed after ${maxRetries} retries: ${e.message}`);
       }
