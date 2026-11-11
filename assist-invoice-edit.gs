@@ -901,6 +901,8 @@ function getOrCreateSheetWithRetry(shtName) {
   }
 
   // 最終的に用意できなかった場合
+  // 「やり直しています」の通知が残ってポップアップと食い違わないよう、先に置き換える
+  if (notified) showToastSafely('処理を中止しました。', '中止', 5);
   try {
     SpreadsheetApp.getUi().alert(
       '完了できませんでした',
