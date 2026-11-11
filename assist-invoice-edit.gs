@@ -890,8 +890,9 @@ function getOrCreateSheetWithRetry(shtName) {
       const elapsedSec = Math.round(elapsed / 1000);
       notified = true;
       showToastSafely(
-        `Google の応答が遅いため、やり直しています（${attempt}回目・${elapsedSec}秒経過）。このままお待ちください。うまくいかない場合は、3分以内に止まってお知らせします。`,
-        '処理中',
+        // 通知の枠は小さく、長いと切れる（本文は4行・約45字まで）。回数と時間はタイトルに出す
+        'Google の応答待ちです。このままお待ちください。3分以内に結果をお知らせします。',
+        `やり直し中（${attempt}回目・${elapsedSec}秒）`,
         60
       );
     }
